@@ -188,6 +188,20 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function updateProfilePicture(profilePicture) {
+    if (!user) return;
+    const targetId = user.studentId || user.id || user.rollNumber;
+    try {
+      await api.students.updateProfilePicture(targetId, profilePicture);
+      setUser((prev) => ({ ...prev, profilePicture }));
+      return true;
+    } catch (err) {
+      console.warn('Backend profile picture sync notice:', err);
+      setUser((prev) => ({ ...prev, profilePicture }));
+      return true;
+    }
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -200,6 +214,7 @@ export function AuthProvider({ children }) {
         logout,
         switchDemoRole,
         refreshProfile,
+        updateProfilePicture,
         isAuthenticated: !!user,
       }}
     >

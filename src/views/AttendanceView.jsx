@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRealtime } from '../context/RealtimeContext';
 import { api } from '../api';
@@ -20,21 +20,61 @@ export default function AttendanceView() {
   const { user } = useAuth();
   const { addToast } = useRealtime();
   const [activeTab, setActiveTab] = useState('student'); // 'student' | 'faculty'
-
-  // Student view data matching Figma
-  const attendanceRecords = [
-    { code: 'CS3501', title: 'Distributed Systems', held: 42, attended: 39, pct: 92.8, status: 'safe' },
-    { code: 'CS3402', title: 'Database Systems', held: 38, attended: 31, pct: 81.5, status: 'safe' },
-    { code: 'CS3511', title: 'Operating Systems', held: 40, attended: 36, pct: 90.0, status: 'safe' },
-    { code: 'EC3405', title: 'Computer Networks', held: 35, attended: 26, pct: 74.2, status: 'shortage' },
-    { code: 'CS3512', title: 'Distributed Computing Lab', held: 14, attended: 13, pct: 92.8, status: 'safe' },
-    { code: 'MA2201', title: 'Discrete Mathematics', held: 44, attended: 38, pct: 86.3, status: 'safe' },
-  ];
+  const [enrollments, setEnrollments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Debarment Simulator State
-  const [simCourseCode, setSimCourseCode] = useState('EC3405');
+  const [simCourseCode, setSimCourseCode] = useState('');
   const [classesToAttend, setClassesToAttend] = useState(4);
   const [classesToMiss, setClassesToMiss] = useState(0);
+
+  const studentId = user?.studentId || user?.id || user?.rollNumber;
+
+  useEffect(() => {
+    async function loadAttendanceData() {
+      setLoading(true);
+      try {
+        if (studentId) {
+          const res = await api.students.getEnrollments(studentId);
+          if (res.status === 'SUCCESS' && Array.isArray(res.enrollments)) {
+            setEnrollments(res.enrollments);
+            if (res.enrollments.length > 0) {
+              setSimCourseCode(res.enrollments[0].courseCode);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load attendance:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAttendanceData();
+  }, [studentId]);
+
+  // Derived real attendance records from database enrollments
+  const attendanceRecords = enrollments.map((e) => ({
+    code: e.courseCode,
+    title: e.courseTitle,
+    held: e.totalClasses || 0,
+    attended: e.classesAttended || 0,
+    pct: e.attendancePercentage != null ? e.attendancePercentage : 100.0,
+    status: (e.attendancePercentage != null ? e.attendancePercentage : 100.0) >= 75 ? 'safe' : 'shortage',
+  }));
+
+  let totalAttended = 0;
+  let totalHeld = 0;
+  let shortageCount = 0;
+
+  attendanceRecords.forEach((r) => {
+    totalAttended += r.attended;
+    totalHeld += r.held;
+    if (r.pct < 75) shortageCount++;
+  });
+
+  const overallPct = totalHeld > 0
+    ? ((totalAttended / totalHeld) * 100).toFixed(1)
+    : (attendanceRecords.length > 0 ? '100.0' : 'N/A');
 
   // Faculty attendance marking interactive roster matching Figma
   const [facultyRoster, setFacultyRoster] = useState([
@@ -88,11 +128,13 @@ export default function AttendanceView() {
   }
 
   // Calculate simulated attendance
-  const selectedCourse = attendanceRecords.find((c) => c.code === simCourseCode) || attendanceRecords[3];
+  const selectedCourse = attendanceRecords.find((c) => c.code === simCourseCode) || attendanceRecords[0] || {
+    code: 'N/A', title: 'No Course', held: 0, attended: 0, pct: 100, status: 'safe'
+  };
   const simNewHeld = selectedCourse.held + Number(classesToAttend) + Number(classesToMiss);
   const simNewAttended = selectedCourse.attended + Number(classesToAttend);
-  const simPct = simNewHeld > 0 ? ((simNewAttended / simNewHeld) * 100).toFixed(1) : 0;
-  const isDebarred = simPct < 75;
+  const simPct = simNewHeld > 0 ? ((simNewAttended / simNewHeld) * 100).toFixed(1) : (selectedCourse.pct || 100);
+  const isDebarred = Number(simPct) < 75;
 
   const presentCount = facultyRoster.filter((s) => s.present).length;
 
@@ -132,9 +174,15 @@ export default function AttendanceView() {
                 <span className="stat-label">Overall Attendance</span>
                 <CheckCircle size={18} color="#10B981" />
               </div>
-              <div className="stat-value">85.4%</div>
+              <div className="stat-value">{overallPct === 'N/A' ? 'N/A' : `${overallPct}%`}</div>
               <div className="stat-meta">
-                <span className="chip chip-success">Above 75% minimum</span>
+                {attendanceRecords.length === 0 ? (
+                  <span style={{ color: '#64748B', fontSize: '0.75rem' }}>0 courses enrolled</span>
+                ) : Number(overallPct) >= 75 ? (
+                  <span className="chip chip-success">Above 75% minimum</span>
+                ) : (
+                  <span className="chip chip-danger">Below 75% minimum</span>
+                )}
               </div>
             </div>
 
@@ -143,9 +191,9 @@ export default function AttendanceView() {
                 <span className="stat-label">Classes Attended</span>
                 <CalendarCheck size={18} color="#0C4A3E" />
               </div>
-              <div className="stat-value">212</div>
+              <div className="stat-value">{totalAttended}</div>
               <div className="stat-meta">
-                <span style={{ color: '#64748B' }}>of 249 classes held</span>
+                <span style={{ color: '#64748B' }}>of {totalHeld} classes held</span>
               </div>
             </div>
 
@@ -154,9 +202,9 @@ export default function AttendanceView() {
                 <span className="stat-label">Classes Missed</span>
                 <Clock size={18} color="#64748B" />
               </div>
-              <div className="stat-value">37</div>
+              <div className="stat-value">{Math.max(0, totalHeld - totalAttended)}</div>
               <div className="stat-meta">
-                <span className="chip chip-neutral">12 with approved OD</span>
+                <span className="chip chip-neutral">{attendanceRecords.length} courses enrolled</span>
               </div>
             </div>
 
@@ -165,11 +213,15 @@ export default function AttendanceView() {
                 <span className="stat-label">At-Risk Courses</span>
                 <AlertTriangle size={18} color="#EF4444" />
               </div>
-              <div className="stat-value" style={{ color: '#EF4444' }}>
-                1
+              <div className="stat-value" style={{ color: shortageCount > 0 ? '#EF4444' : '#10B981' }}>
+                {shortageCount}
               </div>
               <div className="stat-meta">
-                <span className="chip chip-danger">Computer Networks (74%)</span>
+                {shortageCount > 0 ? (
+                  <span className="chip chip-danger">{shortageCount} course(s) &lt; 75%</span>
+                ) : (
+                  <span className="chip chip-success">All courses eligible</span>
+                )}
               </div>
             </div>
           </div>
@@ -188,7 +240,20 @@ export default function AttendanceView() {
                 </tr>
               </thead>
               <tbody>
-                {attendanceRecords.map((r) => {
+                {attendanceRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                      <CalendarCheck size={32} style={{ opacity: 0.35, marginBottom: '8px' }} />
+                      <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.95rem' }}>
+                        No Courses Enrolled (0)
+                      </div>
+                      <div style={{ fontSize: '0.82rem', marginTop: '4px' }}>
+                        You have not enrolled in any courses yet. Please select courses from Course Catalog to start tracking attendance.
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  attendanceRecords.map((r) => {
                   const isShortage = r.pct < 75;
                   return (
                     <tr key={r.code}>
@@ -220,7 +285,7 @@ export default function AttendanceView() {
                       </td>
                     </tr>
                   );
-                })}
+                }))}
               </tbody>
             </table>
           </div>
