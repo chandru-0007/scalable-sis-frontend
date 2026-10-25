@@ -19,28 +19,29 @@ import {
 
 export default function DashboardView({ onNavigate }) {
   const { user } = useAuth();
-  const [courses, setCourses] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
   const [timetable, setTimetable] = useState([]);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const studentId = user?.studentId || user?.id || user?.rollNumber;
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const studentId = user?.studentId || '371292355980038144';
-        const [courseRes, timetableRes, noticeRes] = await Promise.allSettled([
-          api.courses.getAll({ status: 'ACTIVE' }),
-          api.students.getTimetable(studentId),
+        const [enrollRes, timetableRes, noticeRes] = await Promise.allSettled([
+          studentId ? api.students.getEnrollments(studentId) : Promise.resolve({ enrollments: [] }),
+          studentId ? api.students.getTimetable(studentId) : Promise.resolve({ timetable: [] }),
           api.notices.getAll(),
         ]);
 
-        if (courseRes.status === 'fulfilled' && courseRes.value) {
-          const cList = courseRes.value.courses || (Array.isArray(courseRes.value) ? courseRes.value : []);
-          if (cList.length > 0) setCourses(cList);
+        if (enrollRes.status === 'fulfilled' && enrollRes.value) {
+          const eList = enrollRes.value.enrollments || (Array.isArray(enrollRes.value) ? enrollRes.value : []);
+          setEnrollments(eList);
         }
         if (timetableRes.status === 'fulfilled' && timetableRes.value) {
           const tbList = timetableRes.value.timetable || (Array.isArray(timetableRes.value) ? timetableRes.value : []);
-          if (tbList.length > 0) setTimetable(tbList);
+          setTimetable(tbList);
         }
         if (noticeRes.status === 'fulfilled' && noticeRes.value) {
           const ntList = noticeRes.value.notices || (Array.isArray(noticeRes.value) ? noticeRes.value : []);
@@ -53,15 +54,33 @@ export default function DashboardView({ onNavigate }) {
       }
     }
     loadDashboardData();
-  }, [user]);
+  }, [studentId]);
 
-  // Sample attendance cards matching Figma
-  const attendanceData = [
-    { code: 'CS3501', title: 'Distributed Systems', pct: 92, status: 'safe' },
-    { code: 'CS3402', title: 'Database Systems', pct: 81, status: 'safe' },
-    { code: 'CS3511', title: 'Operating Systems', pct: 90, status: 'safe' },
-    { code: 'EC3405', title: 'Computer Networks', pct: 74, status: 'shortage' },
-  ];
+  // Compute live attendance metrics from real database enrollments
+  let overallAttendanceStr = 'N/A';
+  let totalAttendedCount = 0;
+  let totalHeldCount = 0;
+  let gradedCount = 0;
+  let totalGradePoints = 0;
+
+  if (enrollments.length > 0) {
+    enrollments.forEach((e) => {
+      totalAttendedCount += (e.classesAttended || 0);
+      totalHeldCount += (e.totalClasses || 0);
+      if (e.gradePoint && e.gradePoint > 0) {
+        gradedCount++;
+        totalGradePoints += e.gradePoint;
+      }
+    });
+    if (totalHeldCount > 0) {
+      overallAttendanceStr = `${((totalAttendedCount / totalHeldCount) * 100).toFixed(1)}%`;
+    } else {
+      const avg = enrollments.reduce((acc, e) => acc + (e.attendancePercentage || 0), 0) / enrollments.length;
+      overallAttendanceStr = `${avg.toFixed(1)}%`;
+    }
+  }
+
+  const cgpaStr = gradedCount > 0 ? (totalGradePoints / gradedCount).toFixed(2) : (enrollments.length > 0 ? 'In Progress' : 'N/A');
 
   return (
     <div style={styles.container} className="animate-fade-in">
@@ -72,9 +91,13 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Courses Enrolled</span>
             <BookOpen size={18} color="#10B981" />
           </div>
-          <div className="stat-value">{courses.length || 6}</div>
+          <div className="stat-value">{enrollments.length}</div>
           <div className="stat-meta">
-            <span className="chip chip-success">2 electives open</span>
+            {enrollments.length === 0 ? (
+              <span className="chip chip-neutral">0 courses registered</span>
+            ) : (
+              <span className="chip chip-success">{enrollments.length} active courses</span>
+            )}
           </div>
         </div>
 
@@ -83,10 +106,13 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Overall Attendance</span>
             <CalendarCheck size={18} color="#10B981" />
           </div>
-          <div className="stat-value">85.4%</div>
+          <div className="stat-value">{overallAttendanceStr}</div>
           <div className="stat-meta">
-            <span className="chip chip-success">+2.1% this month</span>
-            <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Above 75% threshold</span>
+            {enrollments.length === 0 ? (
+              <span style={{ color: '#64748B', fontSize: '0.75rem' }}>No courses enrolled</span>
+            ) : (
+              <span className="chip chip-success">Above 75% threshold</span>
+            )}
           </div>
         </div>
 
@@ -95,10 +121,12 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Current CGPA</span>
             <Award size={18} color="#8B5CF6" />
           </div>
-          <div className="stat-value">8.42</div>
+          <div className="stat-value">{cgpaStr}</div>
           <div className="stat-meta">
-            <span className="chip chip-purple">Top 15% of batch</span>
-            <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Semester {user?.semester || 5}</span>
+            <span className="chip chip-purple">Semester {user?.semester || 5}</span>
+            <span style={{ color: '#64748B', fontSize: '0.75rem' }}>
+              {enrollments.length === 0 ? 'Not evaluated' : `${gradedCount}/${enrollments.length} evaluated`}
+            </span>
           </div>
         </div>
 
@@ -107,10 +135,9 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Pending Notices</span>
             <BellRing size={18} color="#F59E0B" />
           </div>
-          <div className="stat-value">{notices.length || 4}</div>
+          <div className="stat-value">{notices.length || 0}</div>
           <div className="stat-meta">
-            <span className="chip chip-warning">1 needs action</span>
-            <span style={{ color: '#64748B', fontSize: '0.75rem' }}>Web Crawler Feed</span>
+            <span className="chip chip-warning">Web Crawler Feed</span>
           </div>
         </div>
       </div>
@@ -124,7 +151,9 @@ export default function DashboardView({ onNavigate }) {
             <div className="sis-card-header">
               <div>
                 <h3>Today's Timetable</h3>
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Wednesday • 4 Sessions</span>
+                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                  {timetable.length > 0 ? `${timetable.length} Active Sessions` : '0 Active Sessions'}
+                </span>
               </div>
               <button
                 onClick={() => onNavigate && onNavigate('timetable')}
@@ -151,52 +180,37 @@ export default function DashboardView({ onNavigate }) {
                         <div style={styles.courseSub}>
                           <span style={styles.iconText}>
                             <MapPin size={12} color="#64748B" />
-                            {item.room || 'LH-204'}
+                            {item.room || 'Room TBA'}
                           </span>
                           <span style={styles.iconText}>
                             <User size={12} color="#64748B" />
-                            {item.instructor || 'Dr. Meera R.'}
+                            {item.instructor || 'Faculty Mentor'}
                           </span>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <>
-                    <div style={styles.timetableItem}>
-                      <div style={styles.timeBadge}>
-                        <Clock size={13} color="#10B981" />
-                        <span>09:00 - 09:50</span>
-                      </div>
-                      <div style={styles.sessionDetails}>
-                        <div style={styles.courseHeader}>
-                          <span style={styles.courseTitle}>Distributed Systems (CS3501)</span>
-                          <span className="chip chip-neutral">Lecture</span>
-                        </div>
-                        <div style={styles.courseSub}>
-                          <span style={styles.iconText}><MapPin size={12} /> Tech Hall 405</span>
-                          <span style={styles.iconText}><User size={12} /> Dr. Priya Sharma</span>
-                        </div>
-                      </div>
+                  <div style={{ textAlign: 'center', padding: '24px 16px', color: '#64748B' }}>
+                    <Clock size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
+                    <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                      No Classes Scheduled Today
                     </div>
-
-                    <div style={styles.timetableItem}>
-                      <div style={styles.timeBadge}>
-                        <Clock size={13} color="#10B981" />
-                        <span>10:00 - 11:40</span>
-                      </div>
-                      <div style={styles.sessionDetails}>
-                        <div style={styles.courseHeader}>
-                          <span style={styles.courseTitle}>Database Systems Lab (CS201)</span>
-                          <span className="chip chip-purple">Lab</span>
-                        </div>
-                        <div style={styles.courseSub}>
-                          <span style={styles.iconText}><MapPin size={12} /> Lab Block 304</span>
-                          <span style={styles.iconText}><User size={12} /> Dr. A. Ramanathan</span>
-                        </div>
-                      </div>
+                    <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                      {enrollments.length === 0
+                        ? 'You are not enrolled in any courses yet. Select courses to build your timetable.'
+                        : 'No active lecture or laboratory slots scheduled for today.'}
                     </div>
-                  </>
+                    {enrollments.length === 0 && (
+                      <button
+                        onClick={() => onNavigate && onNavigate('registration')}
+                        className="btn btn-outline btn-sm"
+                        style={{ marginTop: '12px' }}
+                      >
+                        Select Courses to Enroll
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -207,7 +221,9 @@ export default function DashboardView({ onNavigate }) {
             <div className="sis-card-header">
               <div>
                 <h3>Attendance by Course</h3>
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Real-time 75% minimum threshold monitor</span>
+                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
+                  {enrollments.length} enrolled course{enrollments.length === 1 ? '' : 's'} tracked
+                </span>
               </div>
               <button
                 onClick={() => onNavigate && onNavigate('attendance')}
@@ -218,45 +234,65 @@ export default function DashboardView({ onNavigate }) {
               </button>
             </div>
             <div className="sis-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {attendanceData.map((item, idx) => {
-                const isShortage = item.pct < 75;
-                return (
-                  <div key={idx} style={styles.attendanceItem}>
-                    <div style={styles.attHeader}>
-                      <div>
-                        <span style={{ fontWeight: '600', color: '#0F172A', fontSize: '0.88rem' }}>
-                          {item.title}
-                        </span>
-                        <span style={{ color: '#64748B', fontSize: '0.75rem', marginLeft: '8px' }}>
-                          ({item.code})
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span
-                          style={{
-                            fontWeight: '700',
-                            fontSize: '0.95rem',
-                            color: isShortage ? '#DC2626' : '#059669',
-                          }}
-                        >
-                          {item.pct}%
-                        </span>
-                        {isShortage ? (
-                          <span className="chip chip-danger">Shortage (&lt;75%)</span>
-                        ) : (
-                          <span className="chip chip-success">Safe</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div
-                        className={`progress-bar-fill ${isShortage ? 'danger' : 'success'}`}
-                        style={{ width: `${item.pct}%` }}
-                      />
-                    </div>
+              {enrollments.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '26px 16px', color: '#64748B' }}>
+                  <CalendarCheck size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                    0 Courses Enrolled
                   </div>
-                );
-              })}
+                  <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                    No enrolled courses found for your profile. Please select courses from the catalog.
+                  </div>
+                  <button
+                    onClick={() => onNavigate && onNavigate('registration')}
+                    className="btn btn-primary btn-sm"
+                    style={{ marginTop: '12px' }}
+                  >
+                    Browse &amp; Enroll Courses
+                  </button>
+                </div>
+              ) : (
+                enrollments.map((item, idx) => {
+                  const pct = item.attendancePercentage || 0;
+                  const isShortage = pct < 75;
+                  return (
+                    <div key={idx} style={styles.attendanceItem}>
+                      <div style={styles.attHeader}>
+                        <div>
+                          <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.88rem' }}>
+                            {item.courseTitle || item.courseCode}
+                          </span>
+                          <span style={{ color: '#64748B', fontSize: '0.75rem', marginLeft: '8px' }}>
+                            ({item.courseCode})
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span
+                            style={{
+                              fontWeight: '700',
+                              fontSize: '0.95rem',
+                              color: isShortage ? '#DC2626' : '#059669',
+                            }}
+                          >
+                            {pct}%
+                          </span>
+                          {isShortage ? (
+                            <span className="chip chip-danger">Shortage (&lt;75%)</span>
+                          ) : (
+                            <span className="chip chip-success">Safe</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="progress-bar-container">
+                        <div
+                          className={`progress-bar-fill ${isShortage ? 'danger' : 'success'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

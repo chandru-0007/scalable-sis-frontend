@@ -65,8 +65,13 @@ export const api = {
   students: {
     getProfile: (id) => request(`/api/students/${id}`),
     updateProfile: (id, updates) => request(`/api/students/${id}`, { method: 'PUT', body: updates }),
+    updateProfilePicture: (id, profilePicture) => request(`/api/students/${id}/profile-picture`, {
+      method: 'PUT',
+      body: { profilePicture },
+    }),
     list: (limit = 50) => request(`/api/students?limit=${limit}`),
     getTimetable: (id) => request(`/api/students/${id}/timetable`),
+    getEnrollments: (id) => request(`/api/students/${id}/enrollments`),
   },
 
   // ─── Courses & Autocomplete ───
@@ -78,6 +83,10 @@ export const api = {
     suggest: (query) => request(`/api/search/suggest?query=${encodeURIComponent(query)}`),
     enroll: (studentId, courseCode) => request('/api/courses/enroll', {
       method: 'POST',
+      body: { studentId, courseCode },
+    }),
+    unenroll: (studentId, courseCode) => request('/api/courses/enroll', {
+      method: 'DELETE',
       body: { studentId, courseCode },
     }),
   },

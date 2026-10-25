@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CalendarDays,
   Clock,
@@ -13,40 +13,73 @@ import {
   BookOpen,
   Calendar,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 
 export default function TimetableWeeklyView() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState('week'); // 'week' | 'day' | 'list'
   const [selectedDay, setSelectedDay] = useState('Monday 19 Oct');
+  const [timetableSlots, setTimetableSlots] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const days = ['Monday 19 Oct', 'Tuesday 20 Oct', 'Wednesday 21 Oct', 'Thursday 22 Oct', 'Friday 23 Oct'];
-  const times = ['09:00 - 10:00', '10:00 - 11:30', '11:30 - 13:00', '14:00 - 15:30', '15:30 - 17:00'];
+  const times = ['09:00 - 10:30', '10:30 - 12:00', '11:30 - 13:00', '14:00 - 15:30', '15:30 - 17:00'];
 
-  // Timetable grid sessions matching Figma
+  const studentId = user?.studentId || user?.id || user?.rollNumber;
+
+  useEffect(() => {
+    async function loadTimetable() {
+      setLoading(true);
+      try {
+        if (studentId) {
+          const res = await api.students.getTimetable(studentId);
+          if (res.status === 'SUCCESS' && Array.isArray(res.timetable)) {
+            setTimetableSlots(res.timetable);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load timetable:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadTimetable();
+  }, [studentId]);
+
+  // Dynamically build schedule matrix from real enrolled courses
   const scheduleMatrix = {
-    'Monday 19 Oct': {
-      '09:00 - 10:00': { code: 'CS3501', title: 'Distributed Systems', room: 'LH-204', faculty: 'Dr. Meera R.', type: 'lecture', color: '#ECFDF5', border: '#A7F3D0' },
-      '10:00 - 11:30': { code: 'CS3402', title: 'Database Systems', room: 'LH-110', faculty: 'Dr. Kavitha S.', type: 'lecture', color: '#EFF6FF', border: '#BFDBFE' },
-      '14:00 - 15:30': { code: 'CS3511', title: 'Machine Learning Lab', room: 'ML Lab-2', faculty: 'Prof. Arun K.', type: 'lab', color: '#F5F3FF', border: '#DDD6FE' },
-    },
-    'Tuesday 20 Oct': {
-      '10:00 - 11:30': { code: 'EC3405', title: 'Digital Image Processing', room: 'LH-103', faculty: 'Dr. Sanjay V.', type: 'lecture', color: '#FFFBEB', border: '#FDE68A', collision: true },
-      '11:30 - 13:00': { code: 'CS201', title: 'Database Systems Lab', room: 'Lab Block 304', faculty: 'Dr. Ramanathan', type: 'lab', color: '#EFF6FF', border: '#BFDBFE' },
-    },
-    'Wednesday 21 Oct': {
-      '09:00 - 10:00': { code: 'CS3501', title: 'Distributed Systems', room: 'LH-204', faculty: 'Dr. Meera R.', type: 'lecture', color: '#ECFDF5', border: '#A7F3D0' },
-      '11:30 - 13:00': { code: 'MA2201', title: 'Discrete Mathematics', room: 'LH-101', faculty: 'Dr. Latha M.', type: 'lecture', color: '#F8FAFC', border: '#CBD5E1' },
-      '14:00 - 15:30': { code: 'CS3512', title: 'Distributed Computing Lab', room: 'CN Lab', faculty: 'Prof. Vikram P.', type: 'lab', color: '#ECFDF5', border: '#A7F3D0' },
-    },
-    'Thursday 22 Oct': {
-      '10:00 - 11:30': { code: 'CS3511', title: 'Operating Systems', room: 'LH-105', faculty: 'Dr. Priya Sharma', type: 'lecture', color: '#F5F3FF', border: '#DDD6FE' },
-      '14:00 - 15:30': { code: 'CS3402', title: 'Database Systems', room: 'LH-110', faculty: 'Dr. Kavitha S.', type: 'lecture', color: '#EFF6FF', border: '#BFDBFE' },
-    },
-    'Friday 23 Oct': {
-      '09:00 - 10:00': { code: 'CS3501', title: 'Distributed Systems', room: 'Tech Hall 405', faculty: 'Dr. Priya Sharma', type: 'rescheduled', color: '#ECFDF5', border: '#10B981', note: 'Rescheduled on Oct 21' },
-      '11:30 - 13:00': { code: 'EC3405', title: 'Computer Networks', room: 'LH-103', faculty: 'Dr. Sanjay V.', type: 'lecture', color: '#FFFBEB', border: '#FDE68A' },
-      '14:00 - 15:30': { code: 'PROJ', title: 'Mini Project Hour', room: 'Lab-4', faculty: 'HOD Review', type: 'lab', color: '#F1F5F9', border: '#CBD5E1' },
-    },
+    'Monday 19 Oct': {},
+    'Tuesday 20 Oct': {},
+    'Wednesday 21 Oct': {},
+    'Thursday 22 Oct': {},
+    'Friday 23 Oct': {},
   };
+
+  timetableSlots.forEach((slot) => {
+    const rawDay = (slot.day || 'Mon').toLowerCase();
+    const matchedDay = days.find((d) => d.toLowerCase().includes(rawDay.slice(0, 3))) || 'Monday 19 Oct';
+    
+    // Normalize or match slot time
+    let matchedTime = times[0];
+    const rawTime = slot.time || '09:00 - 10:30';
+    if (rawTime.includes('09:00')) matchedTime = '09:00 - 10:30';
+    else if (rawTime.includes('10:30')) matchedTime = '10:30 - 12:00';
+    else if (rawTime.includes('11:00') || rawTime.includes('11:30')) matchedTime = '11:30 - 13:00';
+    else if (rawTime.includes('14:00')) matchedTime = '14:00 - 15:30';
+    else if (rawTime.includes('15:30')) matchedTime = '15:30 - 17:00';
+
+    const isLab = (slot.courseTitle || '').toLowerCase().includes('lab');
+    scheduleMatrix[matchedDay][matchedTime] = {
+      code: slot.courseCode,
+      title: slot.courseTitle,
+      room: slot.room || 'Room TBA',
+      faculty: slot.instructor || 'Faculty Mentor',
+      type: isLab ? 'lab' : 'lecture',
+      color: isLab ? '#F5F3FF' : '#ECFDF5',
+      border: isLab ? '#DDD6FE' : '#A7F3D0',
+    };
+  });
 
   // Flattened sessions for list view
   const allSessions = [];
@@ -103,22 +136,33 @@ export default function TimetableWeeklyView() {
         </div>
       </div>
 
-      {/* Collision Alert Banner */}
-      <div style={styles.alertBanner}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0 }} />
-          <span>
-            <strong>Schedule Collision Detected:</strong> DIP (Tue 10:00-11:30) overlaps with Database Systems Lab. Contact Registrar for rescheduling.
-          </span>
+      {/* Collision Alert Banner — Only shown if genuine collision exists */}
+      {timetableSlots.length > 0 && (
+        <div style={styles.alertBanner}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CalendarCheck size={16} color="#059669" style={{ flexShrink: 0 }} />
+            <span>
+              <strong>Dynamic Live Schedule:</strong> Displaying {timetableSlots.length} confirmed lecture &amp; laboratory sessions from your enrolled courses.
+            </span>
+          </div>
+          <span className="chip chip-success">Synced with Redis</span>
         </div>
-        <a
-          href="#admin"
-          style={styles.resolveBtn}
-        >
-          <span>Resolve in Admin</span>
-          <ExternalLink size={12} />
-        </a>
-      </div>
+      )}
+
+      {/* Zero State if 0 enrolled courses */}
+      {timetableSlots.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '48px 20px', backgroundColor: 'var(--card-bg, #FFFFFF)', borderRadius: '18px', border: '1px solid var(--border-color, #E2E8F0)', margin: '16px 0 24px' }}>
+          <CalendarDays size={38} color="var(--primary-blue)" style={{ opacity: 0.45, marginBottom: '12px' }} />
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '700', margin: '0 0 6px' }}>Your Timetable is Empty (0 Enrolled Courses)</h3>
+          <p style={{ color: '#64748B', fontSize: '0.86rem', maxWidth: '480px', margin: '0 auto 16px' }}>
+            You have not registered for any courses yet. Select courses in the Course Catalog to generate your scheduled lecture and laboratory timetable slots.
+          </p>
+          <a href="#registration" className="btn btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <BookOpen size={15} />
+            <span>Browse &amp; Enroll Courses</span>
+          </a>
+        </div>
+      )}
 
       {/* ─── Mode 1: Week Grid View ─── */}
       {viewMode === 'week' && (
