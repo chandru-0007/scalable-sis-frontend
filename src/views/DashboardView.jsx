@@ -148,16 +148,21 @@ export default function DashboardView({ onNavigate }) {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card"
+          onClick={() => onNavigate && onNavigate('results')}
+          style={{ cursor: 'pointer' }}
+          title="Click to view full Published Results & Grade Card"
+        >
           <div className="stat-card-top">
-            <span className="stat-label">Current CGPA</span>
+            <span className="stat-label">Published Results &amp; CGPA</span>
             <Award size={18} color="#8B5CF6" />
           </div>
           <div className="stat-value">{cgpaStr}</div>
           <div className="stat-meta">
             <span className="chip chip-purple">Semester {user?.semester || 7}</span>
-            <span style={{ color: '#64748B', fontSize: '0.75rem' }}>
-              {enrollments.length === 0 ? 'Not evaluated' : `${gradedCount}/${enrollments.length} evaluated`}
+            <span style={{ color: '#0284C7', fontSize: '0.75rem', fontWeight: '600' }}>
+              View Grade Card &rarr;
             </span>
           </div>
         </div>
