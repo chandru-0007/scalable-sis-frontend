@@ -1,0 +1,305 @@
+\documentclass[landscape,a4paper,10pt]{article}
+\usepackage[margin=0.8cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit, backgrounds, shadows}
+\usepackage{xcolor}
+\usepackage{fontspec}
+% If compiling with pdflatex, fallback fonts work automatically; for xelatex/lualatex:
+\ifxetex
+  \setmainfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+\fi
+
+\pagestyle{empty}
+
+% Define Palette matching architecture.pdf
+\definecolor{canvasbg}{HTML}{FBFBFC}
+\definecolor{clientborder}{HTML}{D1D5DB}
+\definecolor{clientbg}{HTML}{F9FAFB}
+\definecolor{appborder}{HTML}{6EE7B7}
+\definecolor{appbg}{HTML}{ECFDF5}
+\definecolor{pgborder}{HTML}{FCD34D}
+\definecolor{pgbg}{HTML}{FFFBEB}
+\definecolor{redisborder}{HTML}{F472B6}
+\definecolor{redisbg}{HTML}{FDF2F8}
+\definecolor{mongoborder}{HTML}{93C5FD}
+\definecolor{mongobg}{HTML}{EFF6FF}
+\definecolor{guardborder}{HTML}{FDE68A}
+\definecolor{guardbg}{HTML}{FEF3C7}
+\definecolor{textdark}{HTML}{111827}
+\definecolor{textmuted}{HTML}{4B5563}
+\definecolor{textdim}{HTML}{6B7280}
+\definecolor{arrowcolor}{HTML}{4B5563}
+
+\begin{document}
+\begin{center}
+\begin{tikzpicture}[
+    >=Latex,
+    font=\sffamily,
+    node distance=0.6cm and 0.8cm,
+    card/.style={
+        draw=clientborder,
+        fill=white,
+        rounded corners=4pt,
+        thick,
+        inner sep=7pt,
+        align=center
+    },
+    subcard/.style={
+        draw=clientborder!80,
+        fill=white,
+        rounded corners=3pt,
+        inner sep=6pt,
+        align=left
+    },
+    sectionheader/.style={
+        font=\bfseries\footnotesize,
+        text=textmuted,
+        letter space=50
+    },
+    flowarrow/.style={
+        ->,
+        draw=arrowcolor,
+        thick,
+        rounded corners=4pt
+    },
+    exparrow/.style={
+        ->,
+        draw=arrowcolor!70,
+        dashed,
+        thick,
+        rounded corners=4pt
+    },
+    metaarrow/.style={
+        ->,
+        draw=arrowcolor!50,
+        dotted,
+        thick
+    },
+    labelstyle/.style={
+        font=\scriptsize,
+        text=textmuted,
+        fill=white,
+        inner sep=1.5pt,
+        rounded corners=2pt
+    }
+]
+
+% -------------------------------------------------------------
+% TITLE & HEADER
+% -------------------------------------------------------------
+\node[anchor=west] at (-1.5, 9.8) {
+    {\fontsize{17}{20}\selectfont \textbf{ORBIT SIS \ $\cdot$ \ RUNTIME ARCHITECTURE}}
+};
+\node[anchor=west, text=textmuted, font=\small] at (-1.5, 9.3) {
+    real Redis and MongoDB behind two app workers --- no in-memory fallback
+};
+
+% -------------------------------------------------------------
+% CLIENTS TIER (Left)
+% -------------------------------------------------------------
+\node[anchor=north west, sectionheader] (clientstitle) at (-1.5, 8.5) {C L I E N T S};
+
+\node[card, below=0.2cm of clientstitle, text width=3.4cm, anchor=north west] (studentfaculty) {
+    \textbf{Student / faculty}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{browser $\cdot$ HTTPS}}
+};
+
+\node[card, below=0.35cm of studentfaculty, text width=3.4cm] (locust) {
+    \textbf{Locust}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{concurrent workloads}}
+};
+
+\begin{scope}[on background layer]
+    \node[draw=clientborder, fill=clientbg, rounded corners=6pt, inner sep=9pt, fit=(clientstitle) (studentfaculty) (locust)] (clientsbox) {};
+\end{scope}
+
+% -------------------------------------------------------------
+% LEGEND (Below Clients)
+% -------------------------------------------------------------
+\node[anchor=north west, sectionheader] (legendtitle) at (-1.5, 4.3) {L E G E N D};
+
+\node[below=0.2cm of legendtitle, anchor=north west, font=\scriptsize, text=textmuted] (leg1) {
+    \tikz[baseline=-0.5ex]\draw[flowarrow] (0,0) -- (0.6,0); \ request path
+};
+\node[below=0.15cm of leg1, anchor=north west, font=\scriptsize, text=textmuted] (leg2) {
+    \tikz[baseline=-0.5ex]\draw[exparrow] (0,0) -- (0.6,0); \ experimental path
+};
+\node[below=0.15cm of leg2, anchor=north west, font=\scriptsize, text=textmuted] (leg3) {
+    \tikz[baseline=-0.5ex]\draw[metaarrow] (0,0) -- (0.6,0); \ metadata only
+};
+\node[below=0.25cm of leg3, anchor=north west, font=\scriptsize\itshape, text=textdim] (legfoot) {
+    Every store is a real service.
+};
+
+% -------------------------------------------------------------
+% APPLICATION BOUNDARY (Center)
+% -------------------------------------------------------------
+\node[card, text width=2.4cm, right=1.6cm of studentfaculty, yshift=0.1cm] (httpapi) {
+    \textbf{HTTP API}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{FastAPI \ :8000}}
+};
+
+\node[card, text width=3.6cm, right=1.0cm of httpapi] (auth) {
+    \textbf{Authentication}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{role checks $\cdot$ request validation}}
+};
+
+\node[card, text width=6.6cm, below=0.6cm of auth.south west, anchor=north west, xshift=-0.8cm] (academic) {
+    \textbf{Academic workflows}\\[2pt]
+    {\scriptsize\textcolor{textmuted}{courses $\cdot$ offerings $\cdot$ enrollment}}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{grades $\cdot$ attendance $\cdot$ timetable}}
+};
+
+\node[card, text width=8.8cm, below=0.8cm of academic.south west, anchor=north west, xshift=-1.1cm] (sharedexp) {
+    \textbf{Shared-state experiments}\\[2pt]
+    {\scriptsize\textcolor{textmuted}{rate limiting $\cdot$ autocomplete cache $\cdot$ unique IDs}}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{hashed shard writes $\cdot$ resumable crawl}}\\[4pt]
+    {\tiny\textcolor{textdim}{\textit{each facility needs its store present; nothing is emulated in-process;\\shared by both workers, so one allowance and one cache between them}}}
+};
+
+\begin{scope}[on background layer]
+    \node[draw=appborder, fill=appbg, rounded corners=8pt, inner sep=12pt, fit=(httpapi) (auth) (academic) (sharedexp)] (appbox) {};
+\end{scope}
+
+\node[anchor=north west, sectionheader, text=teal!70!black] at ([yshift=-2pt, xshift=8pt]appbox.north west) {A P P L I C A T I O N \ B O U N D A R Y};
+\node[anchor=north east, font=\scriptsize, text=teal!60!black] at ([yshift=-2pt, xshift=-8pt]appbox.north east) {FastAPI modular monolith $\cdot$ two worker processes};
+
+% -------------------------------------------------------------
+% POSTGRESQL (Top Right)
+% -------------------------------------------------------------
+\node[card, right=1.6cm of auth, yshift=-0.2cm, text width=4.8cm, draw=pgborder] (postgres) {
+    \raggedright \textbf{PostgreSQL}\\[2pt]
+    {\scriptsize\textcolor{textmuted}{authoritative academic state}}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{constraints $\cdot$ transactions}}
+};
+
+\begin{scope}[on background layer]
+    \node[draw=pgborder, fill=pgbg, rounded corners=6pt, inner sep=6pt, fit=(postgres)] (pgbox) {};
+\end{scope}
+
+% -------------------------------------------------------------
+% REDIS 7 (Middle Right)
+% -------------------------------------------------------------
+\node[below=0.7cm of pgbox.south west, anchor=north west] (redisheader) {
+    \textbf{\textcolor{redisborder!80!black}{REDIS 7}} \ {\scriptsize\textcolor{textmuted}{:6379 $\cdot$ shared by both workers}}
+};
+
+\node[card, below=0.15cm of redisheader.south west, anchor=north west, text width=5.0cm] (tokenbucket) {
+    \textbf{Token buckets}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{one atomic Lua read-modify-write}}
+};
+
+\node[card, below=0.25cm of tokenbucket, text width=5.0cm] (ttlcache) {
+    \textbf{TTL cache}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{autocomplete $\cdot$ SETEX $\cdot$ expires in place}}
+};
+
+\node[card, below=0.25cm of ttlcache, text width=5.0cm] (idslots) {
+    \textbf{ID worker slots}\\[1pt]
+    {\scriptsize\textcolor{textmuted}{INCR $\rightarrow$ slot 1 or 2 $\cdot$ 1,000 unique IDs}}
+};
+
+\begin{scope}[on background layer]
+    \node[draw=redisborder, fill=redisbg, rounded corners=6pt, inner sep=8pt, fit=(redisheader) (tokenbucket) (ttlcache) (idslots)] (redisbox) {};
+\end{scope}
+
+% -------------------------------------------------------------
+% MONGODB 7 (Bottom Right)
+% -------------------------------------------------------------
+\node[below=0.7cm of redisbox.south west, anchor=north west] (mongoheader) {
+    \textbf{\textcolor{mongoborder!80!black}{MONGODB 7}} \ {\scriptsize\textcolor{textmuted}{sharded cluster $\cdot$ hashed \_id}}
+};
+
+\node[card, below=0.15cm of mongoheader.south west, anchor=north west, text width=2.1cm] (mongos) {
+    \textbf{mongos}\\[1pt]
+    {\tiny\textcolor{textmuted}{router $\cdot$ :27017}}
+};
+
+\node[card, right=0.35cm of mongos, text width=2.6cm] (crawlfront) {
+    \textbf{Crawl frontier}\\[1pt]
+    {\tiny\textcolor{textmuted}{collections $\cdot$ resume state}}
+};
+
+\node[card, below=0.3cm of mongos.south west, anchor=north west, text width=1.6cm] (cfgserver) {
+    \textbf{config server}\\[1pt]
+    {\tiny\textcolor{textmuted}{chunk map}}\\[1pt]
+    {\tiny\textcolor{textmuted}{:27019}}
+};
+
+\node[card, right=0.25cm of cfgserver, text width=1.45cm] (sharda) {
+    \textbf{shard A}\\[1pt]
+    {\tiny\textcolor{textmuted}{replica set}}\\[1pt]
+    {\tiny\textcolor{textmuted}{:27021}}
+};
+
+\node[card, right=0.25cm of sharda, text width=1.45cm] (shardb) {
+    \textbf{shard B}\\[1pt]
+    {\tiny\textcolor{textmuted}{replica set}}\\[1pt]
+    {\tiny\textcolor{textmuted}{:27022}}
+};
+
+\begin{scope}[on background layer]
+    \node[draw=mongoborder, fill=mongobg, rounded corners=6pt, inner sep=8pt, fit=(mongoheader) (mongos) (crawlfront) (cfgserver) (sharda) (shardb)] (mongobox) {};
+\end{scope}
+
+% -------------------------------------------------------------
+% STARTUP GUARD BANNER (Bottom)
+% -------------------------------------------------------------
+\node[card, draw=guardborder, fill=guardbg, below=0.55cm of sharedexp.south west, anchor=north west, text width=11.2cm, align=left] (startupguard) {
+    \textbf{\textcolor{amber!70!black}{Startup guard --- the honest failure mode}}\\[2pt]
+    {\scriptsize\textcolor{textdark}{Redis or MongoDB unreachable $\rightarrow$ the app refuses to start; there is no in-memory stand-in.}}\\[1pt]
+    {\scriptsize\textcolor{textdark}{If a store drops after boot, the affected data routes answer HTTP 503 instead of guessing.}}
+};
+
+% Bottom Measurement Note
+\node[anchor=north west, font=\tiny\selectfont, text=textdim] at (-1.5, -3.8) {
+    Measured on this stack: 500 sharded keys split 249 / 251 $\cdot$ moveChunk moved it to 129 / 371 with all 500 keys still readable $\cdot$ rebalance 256 / 244 $\cdot$ 1,000 unique IDs across worker slots 1 and 2.
+};
+
+% -------------------------------------------------------------
+% CONNECTING PATHWAYS & ARROWS
+% -------------------------------------------------------------
+% Clients -> HTTP API
+\draw[flowarrow] (studentfaculty.east) -- (httpapi.west) 
+    node[midway, above, labelstyle] {HTTPS / JSON};
+
+\draw[flowarrow] (locust.east) -- ++(0.7,0) |- (httpapi.195) 
+    node[pos=0.25, below, labelstyle] {HTTP workload};
+
+% HTTP API -> Authentication
+\draw[flowarrow] (httpapi.east) -- (auth.west) 
+    node[midway, above, labelstyle] {authorize};
+
+% Authentication -> Academic workflows
+\draw[flowarrow] (auth.south) |- (academic.north east) 
+    node[pos=0.6, above right, labelstyle] {allowed request};
+
+% HTTP API -> Shared-state experiments (dashed)
+\draw[exparrow] (httpapi.south) -- ++(0,-0.6) -| ([xshift=-1.2cm]sharedexp.north)
+    node[pos=0.45, right, labelstyle] {experimental routes};
+
+% Academic workflows -> Shared-state experiments
+\draw[flowarrow] (academic.south) -- (sharedexp.north) 
+    node[midway, right, labelstyle] {uses shared components};
+
+% Academic workflows -> PostgreSQL
+\draw[flowarrow] (academic.east) -| (postgres.south) 
+    node[pos=0.35, above, labelstyle] {SQL transaction};
+
+% Shared-state experiments -> Redis 7
+\draw[flowarrow] (sharedexp.east) -- (tokenbucket.west);
+
+% Shared-state experiments -> MongoDB 7
+\draw[flowarrow] ([yshift=-0.6cm]sharedexp.east) -| (mongos.north) 
+    node[pos=0.35, above, labelstyle] {hashed shard writes};
+
+% Internal MongoDB links
+\draw[metaarrow] (mongos.east) -- (crawlfront.west);
+\draw[metaarrow] (mongos.south) -- (cfgserver.north);
+\draw[metaarrow] (mongos.south) -- (sharda.north);
+\draw[metaarrow] (mongos.south) -- (shardb.north);
+
+\end{tikzpicture}
+\end{center}
+\end{document}

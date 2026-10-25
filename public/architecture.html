@@ -3,60 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scalable SIS - System Architecture & Engineering Blueprint</title>
+  <title>ORBIT SIS · Runtime Architecture</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0b0f19;
-      --bg-card: rgba(17, 24, 39, 0.75);
-      --bg-card-hover: rgba(30, 41, 59, 0.9);
-      --border: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(56, 189, 248, 0.35);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --text-dim: #64748b;
-      --primary: #38bdf8;
-      --primary-glow: rgba(56, 189, 248, 0.25);
-      --secondary: #818cf8;
-      --accent: #f472b6;
-      --emerald: #34d399;
-      --amber: #fbbf24;
-      --purple: #c084fc;
-      --glass-blur: blur(16px);
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
-      --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(56, 189, 248, 0.15);
-      --font-sans: 'Outfit', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    [data-theme="light"] {
       --bg: #f8fafc;
-      --bg-card: rgba(255, 255, 255, 0.85);
-      --bg-card-hover: rgba(255, 255, 255, 0.98);
-      --border: rgba(15, 23, 42, 0.08);
-      --border-glow: rgba(14, 165, 233, 0.4);
+      --canvas-bg: #ffffff;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
       --text: #0f172a;
       --text-muted: #475569;
       --text-dim: #94a3b8;
-      --primary: #0284c7;
-      --primary-glow: rgba(2, 132, 199, 0.2);
-      --secondary: #6366f1;
-      --accent: #db2777;
-      --emerald: #059669;
-      --amber: #d97706;
-      --purple: #9333ea;
-      --shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.1), 0 0 20px -5px rgba(2, 132, 199, 0.1);
+      
+      /* Colors matching architecture.pdf */
+      --client-border: #cbd5e1;
+      --client-bg: #f8fafc;
+      --app-border: #6ee7b7;
+      --app-bg: #ecfdf5;
+      --app-title: #047857;
+      --pg-border: #fcd34d;
+      --pg-bg: #fffbeb;
+      --pg-title: #b45309;
+      --redis-border: #f472b6;
+      --redis-bg: #fdf2f8;
+      --redis-title: #be185d;
+      --mongo-border: #93c5fd;
+      --mongo-bg: #eff6ff;
+      --mongo-title: #1d4ed8;
+      --guard-border: #fde68a;
+      --guard-bg: #fef3c7;
+      --guard-title: #b45309;
+      --arrow-color: #64748b;
+      
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    [data-theme="dark"] {
+      --bg: #090d16;
+      --canvas-bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --border-dark: #475569;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --client-border: #334155;
+      --client-bg: #131d31;
+      --app-border: #059669;
+      --app-bg: #064e3b;
+      --app-title: #34d399;
+      --pg-border: #d97706;
+      --pg-bg: #451a03;
+      --pg-title: #fcd34d;
+      --redis-border: #db2777;
+      --redis-bg: #500724;
+      --redis-title: #f472b6;
+      --mongo-border: #2563eb;
+      --mongo-bg: #172554;
+      --mongo-title: #93c5fd;
+      --guard-border: #b45309;
+      --guard-bg: #451a03;
+      --guard-title: #fde68a;
+      --arrow-color: #94a3b8;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
     }
 
     body {
@@ -64,1233 +83,816 @@
       background-color: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
-      position: relative;
-      background-image: 
-        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 85% 75%, rgba(129, 140, 248, 0.08) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(244, 114, 182, 0.04) 0%, transparent 50%),
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
-    /* Top Navigation Header */
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: var(--glass-blur);
-      background: var(--bg-card);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 28px;
+    /* Top Control Bar */
+    .control-bar {
+      width: 100%;
+      max-width: 1320px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      margin-bottom: 18px;
+      padding: 10px 18px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
-    .brand {
+    .control-actions {
       display: flex;
-      align-items: center;
-      gap: 14px;
+      gap: 10px;
     }
 
-    .brand-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-md);
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 16px var(--primary-glow);
-      color: #fff;
-      font-weight: 800;
-      font-size: 20px;
-    }
-
-    .brand-title h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .badge-live {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      padding: 3px 8px;
-      background: rgba(52, 211, 153, 0.15);
-      color: var(--emerald);
-      border: 1px solid rgba(52, 211, 153, 0.3);
-      border-radius: 9999px;
+    .btn {
+      background: var(--bg);
+      border: 1px solid var(--border-dark);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      font-family: var(--font-sans);
+      transition: all 0.15s ease;
     }
 
-    .badge-live::before {
-      content: '';
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--emerald);
-      box-shadow: 0 0 8px var(--emerald);
-      animation: pulse 2s infinite;
+    .btn:hover {
+      background: var(--border);
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    .btn-primary {
+      background: #0284c7;
+      color: #ffffff;
+      border-color: #0284c7;
     }
 
-    .brand-title p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
+    .btn-primary:hover {
+      background: #0369a1;
     }
 
-    .header-actions {
+    /* Outer Blueprint Container (Exact 1:1 Canvas) */
+    .blueprint-frame {
+      width: 100%;
+      max-width: 1320px;
+      background: var(--canvas-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 42px 42px;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+      position: relative;
+    }
+
+    /* Header */
+    .header-section {
+      margin-bottom: 28px;
+    }
+
+    .main-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--text);
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .flow-selector {
-      display: flex;
-      align-items: center;
-      background: rgba(255, 255, 255, 0.05);
-      padding: 4px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-    }
-
-    .flow-btn {
-      background: transparent;
-      border: none;
+    .subtitle {
+      font-size: 0.92rem;
       color: var(--text-muted);
-      padding: 6px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      margin-top: 4px;
+      font-weight: 500;
     }
 
-    .flow-btn.active {
-      background: var(--primary);
-      color: #0b0f19;
-      box-shadow: 0 2px 8px var(--primary-glow);
-    }
-
-    .btn-action {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-action:hover {
-      border-color: var(--primary);
-      box-shadow: 0 0 10px var(--primary-glow);
-    }
-
-    /* Container */
-    .container {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 30px 24px 80px;
-    }
-
-    /* Legend / Stats Row */
-    .stats-row {
+    /* Diagram Grid Layout */
+    .diagram-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-bottom: 28px;
+      grid-template-columns: 200px minmax(420px, 1.25fr) minmax(360px, 1fr);
+      gap: 24px;
+      position: relative;
     }
 
-    .stat-pill {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 14px 18px;
-      backdrop-filter: var(--glass-blur);
+    /* Column 1: Clients & Legend */
+    .col-clients {
       display: flex;
-      align-items: center;
-      gap: 14px;
-      box-shadow: var(--shadow);
+      flex-direction: column;
+      gap: 28px;
     }
 
-    .stat-icon {
-      width: 38px;
-      height: 38px;
+    .box-container {
+      border: 1.5px solid var(--border);
       border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
+      padding: 16px;
+      position: relative;
     }
 
-    .stat-info .stat-val {
-      font-size: 1.15rem;
+    .box-container.clients {
+      border-color: var(--client-border);
+      background: var(--client-bg);
+    }
+
+    .box-header-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .card:last-child {
+      margin-bottom: 0;
+    }
+
+    .card:hover {
+      border-color: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .card-title {
+      font-size: 0.92rem;
       font-weight: 700;
       color: var(--text);
     }
 
-    .stat-info .stat-lbl {
-      font-size: 0.72rem;
+    .card-subtext {
+      font-size: 0.74rem;
       color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      margin-top: 2px;
+      line-height: 1.35;
     }
 
-    /* Main Architecture Canvas */
-    .architecture-canvas {
+    .legend-box {
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .legend-line {
+      width: 28px;
+      height: 2px;
+      background: var(--arrow-color);
       position: relative;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 32px;
-      backdrop-filter: var(--glass-blur);
-      box-shadow: var(--shadow);
+    }
+
+    .legend-line::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -3px;
+      border-left: 6px solid var(--arrow-color);
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+
+    .legend-line.dashed {
+      background: transparent;
+      border-top: 2px dashed var(--arrow-color);
+    }
+
+    .legend-line.dotted {
+      background: transparent;
+      border-top: 2px dotted var(--arrow-color);
+    }
+
+    .legend-footer {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-style: italic;
+      margin-top: 10px;
+    }
+
+    /* Column 2: Application Boundary */
+    .col-app {
       display: flex;
       flex-direction: column;
-      gap: 36px;
     }
 
-    /* Canvas SVG Connector Layer */
-    svg.canvas-wires {
+    .box-container.app-boundary {
+      border-color: var(--app-border);
+      background: var(--app-bg);
+      padding: 18px 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .app-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--app-title);
+    }
+
+    .app-subtitle-right {
+      font-size: 0.74rem;
+      color: var(--app-title);
+      opacity: 0.85;
+    }
+
+    .app-row-top {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .shared-note {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      font-style: italic;
+      line-height: 1.4;
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    }
+
+    /* Column 3: Storage Services */
+    .col-storage {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .box-container.postgres {
+      border-color: var(--pg-border);
+      background: var(--pg-bg);
+    }
+
+    .box-container.redis {
+      border-color: var(--redis-border);
+      background: var(--redis-bg);
+    }
+
+    .box-container.mongo {
+      border-color: var(--mongo-border);
+      background: var(--mongo-bg);
+    }
+
+    .box-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .box-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .box-title.pg { color: var(--pg-title); }
+    .box-title.redis { color: var(--redis-title); }
+    .box-title.mongo { color: var(--mongo-title); }
+
+    .box-meta {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* MongoDB Sharded Grid */
+    .mongo-cluster-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .mongo-shards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    /* Bottom: Startup Guard Banner */
+    .startup-guard-banner {
+      margin-top: 24px;
+      border: 1.5px solid var(--guard-border);
+      background: var(--guard-bg);
+      border-radius: 8px;
+      padding: 14px 20px;
+    }
+
+    .guard-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--guard-title);
+      margin-bottom: 4px;
+    }
+
+    .guard-text {
+      font-size: 0.78rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Footer Note */
+    .footer-metrics-note {
+      margin-top: 18px;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+      font-family: var(--font-sans);
+    }
+
+    /* Inline Flow Connector Badges */
+    .flow-badge {
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      display: inline-block;
+      margin: 4px 0;
+    }
+
+    /* SVG Connecting Wire Overlay */
+    svg.connector-canvas {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 1;
+      z-index: 10;
     }
 
-    .wire-path {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.12);
-      stroke-width: 2;
-      stroke-dasharray: 6 4;
-      transition: stroke 0.3s ease, stroke-width 0.3s ease;
-    }
-
-    .wire-path.active {
-      stroke: var(--primary);
-      stroke-width: 3;
-      stroke-dasharray: 8 4;
-      animation: dashMove 1s linear infinite;
-    }
-
-    .wire-path.active.secondary {
-      stroke: var(--accent);
-    }
-
-    .wire-path.active.emerald {
-      stroke: var(--emerald);
-    }
-
-    @keyframes dashMove {
-      from { stroke-dashoffset: 24; }
-      to { stroke-dashoffset: 0; }
-    }
-
-    /* Architecture Tiers */
-    .tier {
-      position: relative;
-      z-index: 2;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius-md);
-      padding: 24px;
-      background: rgba(255, 255, 255, 0.015);
-    }
-
-    .tier-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-
-    .tier-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.95rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-
-    .tier-badge {
-      font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-    }
-
-    /* Grid of Node Cards */
-    .node-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 20px;
-    }
-
-    .node-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 20px;
-      cursor: pointer;
-      position: relative;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
-      backdrop-filter: var(--glass-blur);
-    }
-
-    .node-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--primary);
-      box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.4), 0 0 18px var(--primary-glow);
-    }
-
-    .node-card.selected {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 2px var(--primary), 0 0 24px var(--primary-glow);
-    }
-
-    .node-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 12px;
-    }
-
-    .node-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-    }
-
-    .protocol-tag {
-      font-family: var(--font-mono);
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      color: var(--text-dim);
-    }
-
-    .node-name {
-      font-size: 1.05rem;
-      font-weight: 700;
-      margin-bottom: 6px;
-      color: var(--text);
-    }
-
-    .node-desc {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      line-height: 1.45;
-      margin-bottom: 14px;
-    }
-
-    .node-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .chip {
-      font-size: 0.68rem;
-      padding: 3px 8px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      border-radius: 9999px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    /* Flow Connectors indicators */
-    .flow-anchor {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background: var(--primary);
-      border: 2px solid var(--bg);
-      border-radius: 50%;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      opacity: 0;
-      transition: opacity 0.2s;
-    }
-
-    .node-card:hover .flow-anchor {
-      opacity: 1;
-    }
-
-    /* Inspector Drawer */
-    .drawer-overlay {
+    /* Modal / Drawer */
+    .inspector-modal {
       position: fixed;
       top: 0;
       right: 0;
-      width: 440px;
+      width: 420px;
       height: 100vh;
-      background: var(--bg-card);
-      backdrop-filter: blur(24px);
+      background: var(--card-bg);
       border-left: 1px solid var(--border);
-      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.5);
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15);
       z-index: 200;
       transform: translateX(100%);
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      display: flex;
-      flex-direction: column;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 24px;
       overflow-y: auto;
     }
 
-    .drawer-overlay.open {
+    .inspector-modal.open {
       transform: translateX(0);
     }
 
-    .drawer-header {
-      padding: 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .btn-close {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 22px;
-      cursor: pointer;
-      line-height: 1;
-      padding: 4px;
-    }
-
-    .btn-close:hover {
-      color: var(--text);
-    }
-
-    .drawer-content {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-
-    .detail-section h4 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--primary);
-      margin-bottom: 10px;
-      font-family: var(--font-mono);
-    }
-
-    .detail-section p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-
-    .code-box {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px;
-      font-family: var(--font-mono);
-      font-size: 0.74rem;
-      color: #38bdf8;
-      overflow-x: auto;
-      white-space: pre;
-    }
-
-    .metric-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.8rem;
-    }
-
-    .metric-table td {
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .metric-table td:first-child {
-      color: var(--text-muted);
-    }
-
-    .metric-table td:last-child {
-      text-align: right;
-      font-family: var(--font-mono);
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    /* Modal Backdrop */
-    .backdrop {
+    .modal-backdrop {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.3);
       z-index: 150;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.3s ease;
+      transition: opacity 0.25s;
     }
 
-    .backdrop.active {
+    .modal-backdrop.open {
       opacity: 1;
       pointer-events: auto;
     }
 
-    /* Responsive */
-    @media (max-width: 960px) {
-      .header-actions {
-        display: none;
-      }
-      .drawer-overlay {
-        width: 100%;
-      }
-      .node-grid {
+    .code-snippet {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 1080px) {
+      .diagram-grid {
         grid-template-columns: 1fr;
+      }
+      .inspector-modal {
+        width: 100%;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Top App Navigation -->
-  <header>
-    <div class="brand">
-      <div class="brand-icon">🎓</div>
-      <div class="brand-title">
-        <h1>Scalable SIS &bull; Architecture Blueprint <span class="badge-live">PRODUCTION LIVE</span></h1>
-        <p>Enterprise Distributed Architecture, Micro-Engines, Edge Proxy & In-Memory Sharding</p>
-      </div>
+  <!-- Top Action & View Toolbar -->
+  <div class="control-bar">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-weight: 700; font-size: 0.9rem;">ORBIT SIS Architecture Blueprint</span>
+      <span class="flow-badge" style="background: rgba(5, 150, 105, 0.1); color: #059669; border-color: rgba(5, 150, 105, 0.3);">REAL STORES &bull; ZERO FALLBACK</span>
     </div>
-
-    <div class="header-actions">
-      <!-- Interactive Flow Simulator -->
-      <div class="flow-selector">
-        <button class="flow-btn active" onclick="activateFlow('all')">Full System</button>
-        <button class="flow-btn" onclick="activateFlow('sis')">SIS Lifecycle</button>
-        <button class="flow-btn" onclick="activateFlow('shortener')">URL Shortener</button>
-        <button class="flow-btn" onclick="activateFlow('crawler')">Crawler & SSE</button>
-      </div>
-
-      <button class="btn-action" onclick="toggleTheme()" title="Toggle Theme">
-        <span id="theme-icon">🌙</span> Theme
-      </button>
-
-      <button class="btn-action" onclick="window.print()" title="Print Blueprint">
-        🖨️ Export PDF
-      </button>
-    </div>
-  </header>
-
-  <div class="container">
-
-    <!-- KPI / Architecture Summary Ribbon -->
-    <div class="stats-row">
-      <div class="stat-pill">
-        <div class="stat-icon" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">🌐</div>
-        <div class="stat-info">
-          <div class="stat-val">Vercel Edge</div>
-          <div class="stat-lbl">Global CDN & Reverse Proxy</div>
-        </div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-icon" style="background: rgba(129, 140, 248, 0.15); color: var(--secondary);">⚡</div>
-        <div class="stat-info">
-          <div class="stat-val">Node 24 / Express</div>
-          <div class="stat-lbl">Docker on Render (PaaS)</div>
-        </div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-icon" style="background: rgba(52, 211, 153, 0.15); color: var(--emerald);">🍃</div>
-        <div class="stat-info">
-          <div class="stat-val">MongoDB Atlas</div>
-          <div class="stat-lbl">ACID Replica Set & Sharded</div>
-        </div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-icon" style="background: rgba(244, 114, 182, 0.15); color: var(--accent);">🚀</div>
-        <div class="stat-info">
-          <div class="stat-val">Redis In-Memory</div>
-          <div class="stat-lbl">Base62 Cache & SSE Pub/Sub</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Architecture Diagram Canvas -->
-    <div class="architecture-canvas" id="canvas">
-
-      <!-- TIER 1: CLIENT ACCESS & PRESENTATION TIER -->
-      <div class="tier" id="tier-clients">
-        <div class="tier-header">
-          <div class="tier-title" style="color: var(--primary);">
-            <span>01</span> Client Presentation & Multi-Persona Portals
-          </div>
-          <span class="tier-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">React 19 &bull; Vite 8 &bull; Soft UI</span>
-        </div>
-        <div class="node-grid">
-          
-          <div class="node-card" onclick="openDetails('student-portal')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">👨‍🎓</div>
-              <span class="protocol-tag">HTTPS / WSS</span>
-            </div>
-            <div class="node-name">Student Portal</div>
-            <div class="node-desc">Course registration with atomic seat reservation, weekly schedule matrix, 75% attendance cutoff tracker, and SGPA transcript viewer.</div>
-            <div class="node-chips">
-              <span class="chip">Course Cart</span>
-              <span class="chip">Live Timetable</span>
-              <span class="chip">Attendance %</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('faculty-portal')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(129, 140, 248, 0.15); color: var(--secondary);">👩‍🏫</div>
-              <span class="protocol-tag">HTTPS / REST</span>
-            </div>
-            <div class="node-name">Faculty Portal</div>
-            <div class="node-desc">Batch attendance marking grid, real-time rubric grade submissions, section roster management, and Base62 notice broadcast.</div>
-            <div class="node-chips">
-              <span class="chip">Attendance Grid</span>
-              <span class="chip">Grade Entry</span>
-              <span class="chip">Auto-Shorten URLs</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('admin-portal')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(244, 114, 182, 0.15); color: var(--accent);">🛡️</div>
-              <span class="protocol-tag">HTTPS / RBAC</span>
-            </div>
-            <div class="node-name">Admin Portal & Monitor</div>
-            <div class="node-desc">Department timetable conflict resolution, faculty onboarding, debarment roster generation, and distributed system metrics dashboard.</div>
-            <div class="node-chips">
-              <span class="chip">Conflict Solver</span>
-              <span class="chip">Debarment Matrix</span>
-              <span class="chip">Cluster Health</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('parent-portal')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(52, 211, 153, 0.15); color: var(--emerald);">👪</div>
-              <span class="protocol-tag">HTTPS / SSE</span>
-            </div>
-            <div class="node-name">Parent Portal</div>
-            <div class="node-desc">Transparent ward performance tracker, real-time low attendance alerts (&lt;75%), verified fee status, and mentor direct messaging.</div>
-            <div class="node-chips">
-              <span class="chip">Ward Progress</span>
-              <span class="chip">Early Warning</span>
-              <span class="chip">SSE Feeds</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- TIER 2: EDGE INGRESS & ROUTING TIER -->
-      <div class="tier" id="tier-edge">
-        <div class="tier-header">
-          <div class="tier-title" style="color: var(--secondary);">
-            <span>02</span> Edge Routing, Security & Reverse Proxy Layer
-          </div>
-          <span class="tier-badge" style="background: rgba(129, 140, 248, 0.15); color: var(--secondary);">Vercel Edge Network &bull; Global CDN</span>
-        </div>
-        <div class="node-grid">
-          
-          <div class="node-card" onclick="openDetails('vercel-proxy')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(129, 140, 248, 0.15); color: var(--secondary);">🔀</div>
-              <span class="protocol-tag">Edge Rewrite</span>
-            </div>
-            <div class="node-name">Vercel Edge Reverse Proxy</div>
-            <div class="node-desc">Terminates SSL at edge, serves static client SPA, and proxies <code>/api/*</code> and <code>/r/*</code> to Render backend without cross-origin preflight overhead.</div>
-            <div class="node-chips">
-              <span class="chip">vercel.json</span>
-              <span class="chip">Zero-CORS</span>
-              <span class="chip">SSL Termination</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('rate-limiter')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(251, 191, 36, 0.15); color: var(--amber);">⏳</div>
-              <span class="protocol-tag">Redis Sliding Window</span>
-            </div>
-            <div class="node-name">Distributed Rate Limiter</div>
-            <div class="node-desc">Throttles burst traffic using Redis token bucket (100 req/min per IP/API token) preventing DDoS, brute-force auth, and scraping abuse.</div>
-            <div class="node-chips">
-              <span class="chip">100 req/min</span>
-              <span class="chip">IP Sliding Window</span>
-              <span class="chip">429 Protection</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- TIER 3: APPLICATION SERVER & CORE MICRO-ENGINES -->
-      <div class="tier" id="tier-backend">
-        <div class="tier-header">
-          <div class="tier-title" style="color: var(--emerald);">
-            <span>03</span> Application Gateway & Distributed Micro-Engines
-          </div>
-          <span class="tier-badge" style="background: rgba(52, 211, 153, 0.15); color: var(--emerald);">Render Container &bull; Node.js Express</span>
-        </div>
-        <div class="node-grid">
-
-          <div class="node-card" onclick="openDetails('sis-engine')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(52, 211, 153, 0.15); color: var(--emerald);">📚</div>
-              <span class="protocol-tag">ACID Engine</span>
-            </div>
-            <div class="node-name">Core SIS Lifecycle Engine</div>
-            <div class="node-desc">Handles enrollment state machine, conflict-free course registration, faculty attendance aggregation, debarment cutoff computations, and timetable generation.</div>
-            <div class="node-chips">
-              <span class="chip">Atomic Enrollment</span>
-              <span class="chip">75% Cutoff Matrix</span>
-              <span class="chip">GPA Computations</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('shortener-engine')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(244, 114, 182, 0.15); color: var(--accent);">✂️</div>
-              <span class="protocol-tag">Base62 Engine</span>
-            </div>
-            <div class="node-name">Distributed URL Shortener Engine</div>
-            <div class="node-desc">Bijective Base62 encoding engine with MurmurHash3 seed generation. Delivers sub-2ms redirect latency via Redis LRU cache with MongoDB persistence.</div>
-            <div class="node-chips">
-              <span class="chip">Base62 [a-zA-Z0-9]</span>
-              <span class="chip">30-Day TTL</span>
-              <span class="chip">&lt;2ms Latency</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('crawler-engine')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(192, 132, 252, 0.15); color: var(--purple);">🕷️</div>
-              <span class="protocol-tag">Cheerio / Axios</span>
-            </div>
-            <div class="node-name">Notice Crawler & Dispatcher</div>
-            <div class="node-desc">Crawls university circulars and verified tech internship portals (Google, AWS, Stripe). Cleans, deduplicates, and broadcasts active opportunities.</div>
-            <div class="node-chips">
-              <span class="chip">Auto-Scraper</span>
-              <span class="chip">HTML Dedupe</span>
-              <span class="chip">Department Tagging</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('sse-engine')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">📡</div>
-              <span class="protocol-tag">Server-Sent Events</span>
-            </div>
-            <div class="node-name">Real-Time Event Streamer</div>
-            <div class="node-desc">Long-lived SSE pipeline broadcasting live announcements, attendance threshold alerts, and instant administrative reschedule notifications to active clients.</div>
-            <div class="node-chips">
-              <span class="chip">text/event-stream</span>
-              <span class="chip">Keep-Alive Heartbeat</span>
-              <span class="chip">Channel Multiplexing</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- TIER 4: DATA PERSISTENCE & IN-MEMORY CACHE TIER -->
-      <div class="tier" id="tier-data">
-        <div class="tier-header">
-          <div class="tier-title" style="color: var(--amber);">
-            <span>04</span> Distributed Data Persistence & Cache Fabric
-          </div>
-          <span class="tier-badge" style="background: rgba(251, 191, 36, 0.15); color: var(--amber);">MongoDB Atlas Multi-AZ &bull; Redis In-Memory</span>
-        </div>
-        <div class="node-grid">
-
-          <div class="node-card" onclick="openDetails('mongodb-cluster')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(52, 211, 153, 0.15); color: var(--emerald);">🍃</div>
-              <span class="protocol-tag">MongoDB Wire</span>
-            </div>
-            <div class="node-name">MongoDB Database Cluster</div>
-            <div class="node-desc">Primary transactional document store with indexing on Student USN, Course Codes, Faculty IDs, and URL short hashes. Multi-document ACID transactions for seat enrollments.</div>
-            <div class="node-chips">
-              <span class="chip">Students & Faculty</span>
-              <span class="chip">Courses & Enrollments</span>
-              <span class="chip">Attendance Records</span>
-              <span class="chip">ShortenedUrls</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('redis-cache')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(244, 114, 182, 0.15); color: var(--accent);">⚡</div>
-              <span class="protocol-tag">RESP Protocol</span>
-            </div>
-            <div class="node-name">Redis In-Memory Fabric</div>
-            <div class="node-desc">Dual-purpose in-memory database: functions as high-speed LRU key-value cache for hot URL redirects (<code>short:&lt;code&gt;</code>) and Pub/Sub message broker for SSE broadcasting.</div>
-            <div class="node-chips">
-              <span class="chip">Hot URL Cache</span>
-              <span class="chip">Pub/Sub Bus</span>
-              <span class="chip">Session Vault</span>
-              <span class="chip">Rate Limiter Store</span>
-            </div>
-          </div>
-
-          <div class="node-card" onclick="openDetails('health-monitor')">
-            <div class="flow-anchor"></div>
-            <div class="node-top">
-              <div class="node-icon" style="background: rgba(56, 189, 248, 0.15); color: var(--primary);">🩺</div>
-              <span class="protocol-tag">Prometheus / Ping</span>
-            </div>
-            <div class="node-name">Health & Observability Probe</div>
-            <div class="node-desc">Continuous synthetic health probe querying <code>/api/health</code>, inspecting Redis ping latency, MongoDB connection pool availability, and process memory heaps.</div>
-            <div class="node-chips">
-              <span class="chip">Ping Check</span>
-              <span class="chip">Pool State</span>
-              <span class="chip">Uptime Gauge</span>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
+    <div class="control-actions">
+      <button class="btn btn-primary" onclick="copyLatexCode()">📋 Copy LaTeX Code</button>
+      <button class="btn" onclick="toggleTheme()"><span id="theme-btn-icon">🌙</span> Dark / Light</button>
+      <button class="btn" onclick="window.print()">🖨️ Print Blueprint</button>
     </div>
   </div>
 
-  <!-- Detail Inspector Drawer -->
-  <div class="backdrop" id="backdrop" onclick="closeDrawer()"></div>
-  <aside class="drawer-overlay" id="drawer">
-    <div class="drawer-header">
-      <div>
-        <h3 id="drawer-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 4px;">Component Inspector</h3>
-        <span id="drawer-badge" class="protocol-tag" style="color: var(--primary);">SYSTEM SPEC</span>
+  <!-- Main Blueprint Frame -->
+  <div class="blueprint-frame" id="blueprint">
+
+    <!-- Header -->
+    <div class="header-section">
+      <h1 class="main-title">ORBIT SIS &bull; RUNTIME ARCHITECTURE</h1>
+      <p class="subtitle">real Redis and MongoDB behind two app workers &mdash; no in-memory fallback</p>
+    </div>
+
+    <!-- 3-Column Diagram Grid -->
+    <div class="diagram-grid">
+
+      <!-- COLUMN 1: CLIENTS & LEGEND -->
+      <div class="col-clients">
+        
+        <div class="box-container clients">
+          <div class="box-header-label">C L I E N T S</div>
+
+          <div class="card" onclick="inspectNode('student-faculty')">
+            <div class="card-title">Student / faculty</div>
+            <div class="card-subtext">browser &bull; HTTPS</div>
+          </div>
+
+          <div class="card" onclick="inspectNode('locust')">
+            <div class="card-title">Locust</div>
+            <div class="card-subtext">concurrent workloads</div>
+          </div>
+        </div>
+
+        <div class="legend-box">
+          <div class="box-header-label">L E G E N D</div>
+          
+          <div class="legend-item">
+            <div class="legend-line"></div>
+            <span>request path</span>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-line dashed"></div>
+            <span>experimental path</span>
+          </div>
+
+          <div class="legend-item">
+            <div class="legend-line dotted"></div>
+            <span>metadata only</span>
+          </div>
+
+          <div class="legend-footer">Every store is a real service.</div>
+        </div>
+
       </div>
-      <button class="btn-close" onclick="closeDrawer()">&times;</button>
+
+      <!-- COLUMN 2: APPLICATION BOUNDARY -->
+      <div class="col-app">
+        <div class="box-container app-boundary">
+          <div class="app-header">
+            <span class="app-title">A P P L I C A T I O N &nbsp; B O U N D A R Y</span>
+            <span class="app-subtitle-right">FastAPI modular monolith &bull; two worker processes</span>
+          </div>
+
+          <!-- Top Row: HTTP API & Authentication -->
+          <div class="app-row-top">
+            <div class="card" style="flex: 1;" onclick="inspectNode('http-api')">
+              <div class="card-title">HTTP API</div>
+              <div class="card-subtext">FastAPI :8000</div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">
+              &rarr; authorize &rarr;
+            </div>
+
+            <div class="card" style="flex: 1.4;" onclick="inspectNode('auth')">
+              <div class="card-title">Authentication</div>
+              <div class="card-subtext">role checks &bull; request validation</div>
+            </div>
+          </div>
+
+          <!-- Mid Row: Academic Workflows -->
+          <div style="text-align: right; padding-right: 28px;">
+            <span class="flow-badge">&darr; allowed request</span>
+          </div>
+
+          <div class="card" onclick="inspectNode('academic')">
+            <div class="card-title">Academic workflows</div>
+            <div class="card-subtext">courses &bull; offerings &bull; enrollment</div>
+            <div class="card-subtext">grades &bull; attendance &bull; timetable</div>
+          </div>
+
+          <!-- Bottom Row: Shared-State Experiments -->
+          <div style="text-align: center;">
+            <span class="flow-badge">&darr; uses shared components</span>
+          </div>
+
+          <div class="card" onclick="inspectNode('shared-exp')">
+            <div class="card-title">Shared-state experiments</div>
+            <div class="card-subtext">rate limiting &bull; autocomplete cache &bull; unique IDs</div>
+            <div class="card-subtext">hashed shard writes &bull; resumable crawl</div>
+            <div class="shared-note">
+              each facility needs its store present; nothing is emulated in-process; shared by both workers, so one allowance and one cache between them
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- COLUMN 3: POSTGRESQL, REDIS 7, MONGODB 7 -->
+      <div class="col-storage">
+
+        <!-- PostgreSQL -->
+        <div class="box-container postgres">
+          <div class="box-title-bar">
+            <span class="box-title pg">PostgreSQL</span>
+            <span class="box-meta">authoritative academic state</span>
+          </div>
+          <div class="card-subtext">constraints &bull; transactions</div>
+        </div>
+
+        <!-- Redis 7 -->
+        <div class="box-container redis">
+          <div class="box-title-bar">
+            <span class="box-title redis">REDIS 7</span>
+            <span class="box-meta">:6379 &bull; shared by both workers</span>
+          </div>
+
+          <div class="card" onclick="inspectNode('token-buckets')">
+            <div class="card-title">Token buckets</div>
+            <div class="card-subtext">one atomic Lua read-modify-write</div>
+          </div>
+
+          <div class="card" onclick="inspectNode('ttl-cache')">
+            <div class="card-title">TTL cache</div>
+            <div class="card-subtext">autocomplete &bull; SETEX &bull; expires in place</div>
+          </div>
+
+          <div class="card" onclick="inspectNode('id-slots')">
+            <div class="card-title">ID worker slots</div>
+            <div class="card-subtext">INCR &rarr; slot 1 or 2 &bull; 1,000 unique IDs</div>
+          </div>
+        </div>
+
+        <!-- MongoDB 7 Sharded Cluster -->
+        <div class="box-container mongo">
+          <div class="box-title-bar">
+            <span class="box-title mongo">MONGODB 7</span>
+            <span class="box-meta">sharded cluster &bull; hashed _id</span>
+          </div>
+
+          <div class="mongo-cluster-grid">
+            <div class="card" onclick="inspectNode('mongos')">
+              <div class="card-title">mongos</div>
+              <div class="card-subtext">router &bull; :27017</div>
+            </div>
+
+            <div class="card" onclick="inspectNode('crawl-frontier')">
+              <div class="card-title">Crawl frontier</div>
+              <div class="card-subtext">collections &bull; resume state</div>
+            </div>
+          </div>
+
+          <div class="mongo-shards-row">
+            <div class="card" onclick="inspectNode('config-server')">
+              <div class="card-title" style="font-size: 0.8rem;">config server</div>
+              <div class="card-subtext" style="font-size: 0.68rem;">chunk map<br>:27019</div>
+            </div>
+
+            <div class="card" onclick="inspectNode('shard-a')">
+              <div class="card-title" style="font-size: 0.8rem;">shard A</div>
+              <div class="card-subtext" style="font-size: 0.68rem;">replica set<br>:27021</div>
+            </div>
+
+            <div class="card" onclick="inspectNode('shard-b')">
+              <div class="card-title" style="font-size: 0.8rem;">shard B</div>
+              <div class="card-subtext" style="font-size: 0.68rem;">replica set<br>:27022</div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
-    <div class="drawer-content" id="drawer-body">
-      <!-- Injected via JavaScript -->
+
+    <!-- Startup Guard Banner -->
+    <div class="startup-guard-banner">
+      <div class="guard-title">Startup guard &mdash; the honest failure mode</div>
+      <div class="guard-text">
+        Redis or MongoDB unreachable &rarr; the app refuses to start; there is no in-memory stand-in.<br>
+        If a store drops after boot, the affected data routes answer HTTP 503 instead of guessing.
+      </div>
     </div>
-  </aside>
+
+    <!-- Footer Note -->
+    <div class="footer-metrics-note">
+      Measured on this stack: 500 sharded keys split 249 / 251 &bull; moveChunk moved it to 129 / 371 with all 500 keys still readable &bull; rebalance 256 / 244 &bull; 1,000 unique IDs across worker slots 1 and 2.
+    </div>
+
+  </div>
+
+  <!-- Detail Inspector Drawer -->
+  <div class="modal-backdrop" id="modalBackdrop" onclick="closeInspector()"></div>
+  <div class="inspector-modal" id="inspectorModal">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h3 id="modalTitle" style="font-size: 1.15rem; font-weight: 700;">Node Specification</h3>
+      <button class="btn" onclick="closeInspector()" style="padding: 2px 8px; font-size: 1rem;">&times;</button>
+    </div>
+    <div id="modalContent"></div>
+  </div>
 
   <script>
-    // Component Metadata Repository
-    const COMPONENT_DATA = {
-      'student-portal': {
-        title: 'Student Portal Client',
-        badge: 'REACT 19 SPA',
-        desc: 'Comprehensive web workspace for students to track attendance metrics, register for elective/core courses with real-time seat decrement, review weekly timetables, and monitor GPA/SGPA transcripts.',
-        tech: ['React 19', 'Vite 8', 'Soft UI Evolution', 'Lucide Icons', 'HTML5 LocalStorage'],
-        routes: ['/api/courses', '/api/courses/enroll', '/api/attendance/me', '/api/notices/public'],
-        metrics: {
-          'Render Target': 'Vercel Global Edge',
-          'Client State': 'Context API + SWR',
-          'Responsive': 'Mobile / Tablet / Desktop',
-          'Auth Standard': 'JWT Bearer Token'
-        },
-        code: `// Student Enrollment Atomic Dispatch
-const res = await api.courses.enroll({
-  courseCode: 'CS501',
-  studentId: user.studentId
-});
-if (res.status === 'ENROLLED') {
-  triggerNotification('Course seat secured atomically!');
-}`
-      },
-      'faculty-portal': {
-        title: 'Faculty Portal Client',
-        badge: 'REACT 19 SPA',
-        desc: 'Faculty command center providing high-speed batch attendance marking matrices, assignment rubric grading, course enrollment rosters, and instant announcement authoring with Base62 URL auto-shortening.',
-        tech: ['React 19', 'Vite 8', 'Soft UI Grid', 'Dynamic Dialogs'],
-        routes: ['/api/attendance/mark', '/api/grades/submit', '/api/notices/create'],
-        metrics: {
-          'Batch Matrix': 'Up to 120 students/sec',
-          'Grade Scale': '0 - 100 with Auto-Grade Point',
-          'Link Engine': 'Direct Base62 auto-conversion'
-        },
-        code: `// Batch Attendance Matrix Submission
-POST /api/attendance/mark
-{
-  "courseCode": "CS501",
-  "date": "2026-10-25",
-  "records": [
-    { "studentId": "1MS21CS001", "status": "PRESENT" },
-    { "studentId": "1MS21CS002", "status": "ABSENT" }
-  ]
-}`
-      },
-      'admin-portal': {
-        title: 'Admin Portal & System Monitor',
-        badge: 'ADMIN COMMAND',
-        desc: 'Administrative hub for campus operations: automated timetable conflict resolution, faculty assignment, 75% cutoff debarment list generation, and the unified Base62 Distributed URL Shortener Engine.',
-        tech: ['React 19', 'Canvas API', 'System Monitor Metrics Card'],
-        routes: ['/api/timetable/reschedule', '/api/admin/debarment', '/api/url/shorten', '/api/health'],
-        metrics: {
-          'Debarment Rules': 'Strict <75% automated flagging',
-          'Shortener Engine': 'Embedded Base62 Card (Component 7)',
-          'Conflict Detection': 'Room + Faculty + Slot collision'
-        },
-        code: `// Embedded URL Shortener Invocation
-POST /api/url/shorten
-{
-  "originalUrl": "https://university.edu/announcements/circular-789.pdf",
-  "customAlias": "oct26-exam-schedule"
-}`
-      },
-      'parent-portal': {
-        title: 'Parent Portal Client',
-        badge: 'WARD MONITOR',
-        desc: 'Lightweight, transparent portal for parents to monitor academic progression, receive immediate push notifications when ward attendance dips below 75%, and view verified fee records.',
-        tech: ['React 19', 'Server-Sent Events Client', 'Responsive Cards'],
-        routes: ['/api/attendance/ward', '/api/grades/ward', '/api/events'],
-        metrics: {
-          'Early Warning': 'Triggered at 74.9% and below',
-          'Communication': 'Encrypted Mentor Messaging',
-          'Realtime Feed': 'Live SSE Event Stream'
-        },
-        code: `// SSE Event Listener for Attendance Alerts
-const eventSource = new EventSource('/api/events');
-eventSource.addEventListener('attendance_warning', (e) => {
-  const data = JSON.parse(e.data);
-  notifyParent(\`Alert: \${data.wardName} attendance is \${data.percentage}%\`);
+    const NODE_DETAILS = {
+      'student-faculty': {
+        title: 'Student / faculty Client Tier',
+        role: 'Client browser interface connecting via HTTPS to access student information, course enrollments, timetables, and academic transcripts.',
+        code: `// Client Fetch Contract
+const res = await fetch('/api/academic/offerings', {
+  headers: { 'Authorization': \`Bearer \${token}\` }
 });`
       },
-      'vercel-proxy': {
-        title: 'Vercel Edge Reverse Proxy',
-        badge: 'EDGE ROUTER',
-        desc: 'Edge server routing engine configured via vercel.json. It transparently terminates TLS, serves static client bundles globally from edge caches, and rewrites /api/* and /r/* requests directly to Render.',
-        tech: ['Vercel Edge Network', 'vercel.json Rewrites', 'Global Anycast CDN'],
-        routes: ['/api/(.*) -> Render Backend', '/r/(.*) -> Render Shortener', '/(.*) -> /index.html'],
-        metrics: {
-          'Preflight Delay': '0ms (Same-Origin Rewrite)',
-          'Edge Cache Hit Rate': '99.4% for assets',
-          'SSL Protocol': 'TLS 1.3 / HTTP/2'
-        },
-        code: `// vercel.json Production Rewrites
-{
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://scalable-sis-backend.onrender.com/api/$1" },
-    { "source": "/r/(.*)", "destination": "https://scalable-sis-backend.onrender.com/r/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}`
+      'locust': {
+        title: 'Locust Concurrent Workload Generator',
+        role: 'Load-testing framework simulating concurrent user sessions, burst registrations, and stress-testing the Redis rate-limiting token bucket.',
+        code: `class SISUser(HttpUser):
+    wait_time = between(0.1, 0.5)
+    @task
+    def load_offerings(self):
+        self.client.get("/api/academic/offerings")`
       },
-      'rate-limiter': {
-        title: 'Distributed Redis Rate Limiter',
-        badge: 'SECURITY SHIELD',
-        desc: 'Sliding window rate limiter backed by Redis atomic counter operations. Shields application endpoints from abusive scraping, automated credential stuffing, and bot requests.',
-        tech: ['Redis INCR / EXPIRE', 'Sliding Window Counter', 'Express Middleware'],
-        routes: ['All API endpoints', 'Auth endpoints (Strict 10 req/min)'],
-        metrics: {
-          'Default Window': '100 requests / 60 seconds',
-          'Enforcement Action': 'HTTP 429 Too Many Requests',
-          'Storage Footprint': '<128 bytes per active IP'
-        },
-        code: `// Redis Sliding Window Check
-const key = \`rate:\${ip}:\${currentMinute}\`;
-const count = await redis.incr(key);
-if (count === 1) await redis.expire(key, 60);
-if (count > 100) return res.status(429).json({ error: "Rate limit exceeded" });`
+      'http-api': {
+        title: 'HTTP API Gateway (FastAPI :8000)',
+        role: 'Ingress entrypoint running on FastAPI :8000 across two worker processes. Dispatches standard requests to authentication and experimental routes to shared-state experiments.',
+        code: `app = FastAPI(title="ORBIT SIS Runtime")
+app.include_router(academic_router, prefix="/api/academic")
+app.include_router(experimental_router, prefix="/api/experiments")`
       },
-      'sis-engine': {
-        title: 'Core SIS Lifecycle Engine',
-        badge: 'BUSINESS LOGIC',
-        desc: 'The central orchestration layer managing institutional student workflows: enrollment state machines, conflict-free course selection, attendance percentages, GPA calculations, and timetable generation.',
-        tech: ['Node.js 24', 'Express.js', 'Mongoose Transactions', 'JWT RBAC'],
-        routes: ['/api/courses', '/api/attendance', '/api/grades', '/api/timetable'],
-        metrics: {
-          'Transaction Isolation': 'Snapshot Isolation (MongoDB ACID)',
-          'Attendance Logic': 'Weighted lecture/lab credits',
-          'Security': 'Strict Role-Based Middleware'
-        },
-        code: `// ACID Course Enrollment Transaction
-const session = await mongoose.startSession();
-session.startTransaction();
-try {
-  const course = await Course.findOneAndUpdate(
-    { code: courseCode, seatsAvailable: { $gt: 0 } },
-    { $inc: { seatsAvailable: -1 } },
-    { session, new: true }
-  );
-  if (!course) throw new Error("Course is at full capacity");
-  await Enrollment.create([{ studentId, courseCode }], { session });
-  await session.commitTransaction();
-} finally {
-  session.endSession();
-}`
+      'auth': {
+        title: 'Authentication & Role Checks',
+        role: 'Validates JWT signatures, enforces role-based permissions (Student, Faculty, Admin), and sanitizes inbound payload constraints.',
+        code: `async def verify_permissions(user = Depends(get_current_user)):
+    if user.role not in ['student', 'faculty', 'admin']:
+        raise HTTPException(status_code=403, detail="Forbidden")`
       },
-      'shortener-engine': {
-        title: 'Base62 Distributed URL Shortener Engine',
-        badge: 'HIGH CONCURRENCY',
-        desc: 'Ultra high-performance URL shortening and redirection engine. Transforms long institutional hyperlinks into 7-character Base62 keys with sub-2ms Redis redirection.',
-        tech: ['Bijective Base62', 'MurmurHash3', 'Redis In-Memory Key-Value', 'MongoDB Secondary'],
-        routes: ['POST /api/url/shorten', 'GET /r/:shortCode'],
-        metrics: {
-          'Key Space': '62^7 = 3.52 Trillion Unique URLs',
-          'Cache Redirect Latency': '1.2ms (Redis GET)',
-          'TTL': '30-Day Auto-Expiry with Access Refresh'
-        },
-        code: `// Base62 Bijective Encoding
-const CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-function toBase62(num) {
-  let str = "";
-  while (num > 0) {
-    str = CHARS[num % 62] + str;
-    num = Math.floor(num / 62);
-  }
-  return str.padStart(7, "0");
-}`
+      'academic': {
+        title: 'Academic Workflows',
+        role: 'Core business logic for courses, section offerings, atomic enrollment, student attendance records, grades, and timetable slot scheduling with PostgreSQL transactions.',
+        code: `async with postgres_pool.acquire() as conn:
+    async with conn.transaction():
+        await conn.execute("UPDATE courses SET seats = seats - 1 WHERE id = $1", course_id)`
       },
-      'crawler-engine': {
-        title: 'Notice Crawler & Opportunities Dispatcher',
-        badge: 'AUTOMATED ETL',
-        desc: 'Background crawling engine executing periodic scrapes of university bulletin boards and verified enterprise recruitment portals (Google, AWS, Stripe). Extracts metadata, cleans HTML, and prevents duplicates.',
-        tech: ['Axios', 'Cheerio DOM Parser', 'Regex Entity Extractor'],
-        routes: ['GET /api/notices/public', 'POST /api/crawler/trigger'],
-        metrics: {
-          'Crawl Frequency': 'Every 15 minutes',
-          'Deduplication': 'SHA-256 Content Hash',
-          'Verified Portals': 'Google, AWS, Stripe, Tesla, Qualcomm'
-        },
-        code: `// Content Hash Deduplication
-const hash = crypto.createHash('sha256').update(scrapedText).digest('hex');
-const exists = await Notice.findOne({ contentHash: hash });
-if (!exists) {
-  await Notice.create({ title, url, tags, contentHash: hash });
-  await redis.publish('announcements', JSON.stringify({ title, url }));
-}`
+      'shared-exp': {
+        title: 'Shared-State Experiments',
+        role: 'High-speed distributed experiments: Token bucket rate limiting, autocomplete TTL caching, globally unique ID worker slots, hashed shard writes, and resumable crawler state.',
+        code: `// Nothing is emulated in-process; both workers share one Redis and MongoDB.
+if not await redis.ping():
+    raise HTTPException(status_code=503, detail="Store unreachable")`
       },
-      'sse-engine': {
-        title: 'Server-Sent Events Real-Time Engine',
-        badge: 'STREAMING DISPATCH',
-        desc: 'Persistent HTTP streaming layer maintaining long-lived event connections to thousands of connected browser tabs. Broadcasts instant emergency notices, attendance changes, and course slot alerts.',
-        tech: ['HTTP/2 SSE', 'Redis Pub/Sub Subscriber', 'Client Channel Heartbeats'],
-        routes: ['GET /api/events'],
-        metrics: {
-          'Protocol': 'text/event-stream with keep-alive ping (15s)',
-          'Reconnection': 'Automatic browser backoff with Last-Event-ID',
-          'Connection Footprint': '<8KB RAM per client stream'
-        },
-        code: `// Server-Sent Events Dispatcher
-app.get('/api/events', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  const listener = (msg) => res.write(\`data: \${msg}\\n\\n\`);
-  eventBus.on('broadcast', listener);
-  req.on('close', () => eventBus.off('broadcast', listener));
-});`
+      'token-buckets': {
+        title: 'Redis Token Buckets',
+        role: 'Atomic Lua read-modify-write script in Redis executing rate-limiting token replenishment and consumption in a single atomic network roundtrip.',
+        code: `-- Lua Script in Redis
+local key = KEYS[1]
+local limit = tonumber(ARGV[1])
+local current = redis.call('INCR', key)
+if current == 1 then redis.call('EXPIRE', key, 60) end
+return current <= limit`
       },
-      'mongodb-cluster': {
-        title: 'MongoDB Database Cluster',
-        badge: 'PERSISTENT STORE',
-        desc: 'High-availability document database running with multi-zone replica sets. Stores normalized user profiles, courses, enrollments, attendance logs, and URL shortener mapping records with compound indexes.',
-        tech: ['MongoDB 8.0 / Atlas', 'Replica Set (Primary-Secondary)', 'Compound B-Tree Indexes'],
-        routes: ['students', 'faculty', 'courses', 'enrollments', 'attendance', 'shortenedurls'],
-        metrics: {
-          'High Availability': '99.99% Multi-Region Replica Set',
-          'ACID Support': 'Multi-Document Atomic Transactions',
-          'Index Efficiency': 'Covered index queries on (courseCode, studentId)'
-        },
-        code: `// Schema Compound Indexes
-AttendanceSchema.index({ studentId: 1, courseCode: 1, date: -1 });
-ShortenedUrlSchema.index({ shortCode: 1 }, { unique: true });
-EnrollmentSchema.index({ studentId: 1, courseCode: 1 }, { unique: true });`
+      'ttl-cache': {
+        title: 'Redis TTL Cache',
+        role: 'Fast autocomplete search cache using Redis SETEX with automated in-place expiration to avoid memory exhaustion.',
+        code: `await redis.setex(f"autocomplete:{prefix}", 300, json.dumps(results))`
       },
-      'redis-cache': {
-        title: 'Redis In-Memory Fabric',
-        badge: 'IN-MEMORY ACCELERATOR',
-        desc: 'Ultra low-latency in-memory data store functioning simultaneously as an LRU cache for Base62 URL short codes, a rate limiter sliding window tracker, a session cache, and a Pub/Sub message broker.',
-        tech: ['Redis 7.2 / Memurai', 'RESP Protocol', 'LRU Cache Eviction Policy', 'Pub/Sub'],
-        routes: ['short:*', 'rate:*', 'session:*', 'pubsub:announcements'],
-        metrics: {
-          'Throughput': '100,000+ Operations / sec',
-          'Read Latency': '<0.8ms average',
-          'Persistence': 'AOF (Append-Only File) + RDB snapshots'
-        },
-        code: `// Redis Short URL Cache-Aside Pattern
-async function resolveUrl(code) {
-  const cached = await redis.get(\`short:\${code}\`);
-  if (cached) return cached;
-  const doc = await ShortenedUrl.findOne({ shortCode: code });
-  if (doc) {
-    await redis.setex(\`short:\${code}\`, 86400 * 30, doc.originalUrl);
-    return doc.originalUrl;
-  }
-  return null;
-}`
+      'id-slots': {
+        title: 'Redis ID Worker Slots',
+        role: 'Distributed unique ID allocator using atomic INCR over assigned worker slots (1 or 2) generating 1,000 unique IDs without collision.',
+        code: `worker_slot = os.getenv("WORKER_SLOT", "1")
+unique_id = await redis.incr(f"id_counter:slot_{worker_slot}")`
       },
-      'health-monitor': {
-        title: 'Health & Observability Probe',
-        badge: 'DIAGNOSTIC SENSOR',
-        desc: 'Real-time diagnostic probe testing MongoDB ping roundtrip, Redis PONG response, memory heap allocation, and server process uptime. Exposes JSON diagnostic payloads to the System Monitor.',
-        tech: ['Prometheus Compatible', 'Synthetic Probes', 'Process Heap Monitoring'],
-        routes: ['GET /api/health'],
-        metrics: {
-          'Database Check': 'MongoDB .ping() & Redis .ping()',
-          'Response Code': 'HTTP 200 UP / 503 DEGRADED',
-          'Poll Interval': '10 seconds automated probe'
-        },
-        code: `// /api/health JSON Response
-{
-  "server": "UP",
-  "mongodb": "UP",
-  "mongodbProvider": "Local MongoDB / Atlas Cluster",
-  "redis": "UP - PONG",
-  "redisProvider": "Local Redis / Memurai",
-  "uptimeSeconds": 145920
-}`
+      'mongos': {
+        title: 'MongoDB mongos Router (:27017)',
+        role: 'Stateless query router for MongoDB 7 sharded cluster. Directs hashed _id writes and reads to shard A or shard B based on the chunk map in config server.',
+        code: `sh.status()
+// Hashed Shard Key writes: { "_id": "hashed" }`
+      },
+      'crawl-frontier': {
+        title: 'MongoDB Crawl Frontier',
+        role: 'Stateful collection tracking visited URLs, discovered documents, resume states, and deduplicated circular contents.',
+        code: `await db.crawl_frontier.update_one(
+    {"url": target_url},
+    {"$set": {"status": "VISITED", "timestamp": now}},
+    upsert=True
+)`
+      },
+      'config-server': {
+        title: 'MongoDB Config Server (:27019)',
+        role: 'Stores sharded metadata, chunk distribution mappings, and replica set status.',
+        code: `mongod --configsvr --replSet configReplSet --port 27019`
+      },
+      'shard-a': {
+        title: 'MongoDB Shard A Replica Set (:27021)',
+        role: 'Primary-secondary replica set storing approximately 50% of the hashed chunk collection keys.',
+        code: `rs.status() // Port 27021 (Primary + Secondaries)`
+      },
+      'shard-b': {
+        title: 'MongoDB Shard B Replica Set (:27022)',
+        role: 'Replica set storing balanced chunks. Participates in moveChunk and rebalance operations.',
+        code: `sh.moveChunk("sis.frontier", { "_id": MinKey }, "shardB")`
       }
     };
 
-    function openDetails(key) {
-      const data = COMPONENT_DATA[key];
+    function inspectNode(key) {
+      const data = NODE_DETAILS[key];
       if (!data) return;
 
-      document.querySelectorAll('.node-card').forEach(c => c.classList.remove('selected'));
-      event.currentTarget.classList.add('selected');
-
-      document.getElementById('drawer-title').innerText = data.title;
-      document.getElementById('drawer-badge').innerText = data.badge;
-
-      let techPills = data.tech.map(t => `<span class="chip" style="background: rgba(56, 189, 248, 0.1); color: var(--primary);">${t}</span>`).join('');
-      let routesPills = data.routes.map(r => `<div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">&bull; ${r}</div>`).join('');
-
-      let metricsRows = '';
-      for (let k in data.metrics) {
-        metricsRows += `<tr><td>${k}</td><td>${data.metrics[k]}</td></tr>`;
-      }
-
-      document.getElementById('drawer-body').innerHTML = `
-        <div class="detail-section">
-          <h4>Architectural Role</h4>
-          <p>${data.desc}</p>
+      document.getElementById('modalTitle').innerText = data.title;
+      document.getElementById('modalContent').innerHTML = `
+        <div style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+          ${data.role}
         </div>
-
-        <div class="detail-section">
-          <h4>Technology Stack</h4>
-          <div style="display: flex; flex-wrap: wrap; gap: 6px;">${techPills}</div>
+        <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 4px;">
+          Technical Implementation
         </div>
-
-        <div class="detail-section">
-          <h4>Operational Metrics & SLA</h4>
-          <table class="metric-table">${metricsRows}</table>
-        </div>
-
-        <div class="detail-section">
-          <h4>Key Endpoints & Schemas</h4>
-          ${routesPills}
-        </div>
-
-        <div class="detail-section">
-          <h4>Implementation Reference</h4>
-          <div class="code-box">${escapeHtml(data.code)}</div>
-        </div>
+        <div class="code-snippet">${escapeHtml(data.code)}</div>
       `;
 
-      document.getElementById('drawer').classList.add('open');
-      document.getElementById('backdrop').classList.add('active');
+      document.getElementById('inspectorModal').classList.add('open');
+      document.getElementById('modalBackdrop').classList.add('open');
     }
 
-    function closeDrawer() {
-      document.getElementById('drawer').classList.remove('open');
-      document.getElementById('backdrop').classList.remove('active');
-      document.querySelectorAll('.node-card').forEach(c => c.classList.remove('selected'));
+    function closeInspector() {
+      document.getElementById('inspectorModal').classList.remove('open');
+      document.getElementById('modalBackdrop').classList.remove('open');
     }
 
-    function escapeHtml(string) {
-      return String(string).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    function activateFlow(flowName) {
-      document.querySelectorAll('.flow-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-
-      const allNodes = document.querySelectorAll('.node-card');
-      allNodes.forEach(n => {
-        n.style.opacity = '1';
-        n.style.filter = 'none';
-      });
-
-      if (flowName === 'sis') {
-        allNodes.forEach(n => {
-          const match = n.innerText.includes('Student') || n.innerText.includes('Faculty') || n.innerText.includes('Core SIS') || n.innerText.includes('MongoDB') || n.innerText.includes('Vercel');
-          if (!match) {
-            n.style.opacity = '0.25';
-            n.style.filter = 'grayscale(0.8)';
-          }
-        });
-      } else if (flowName === 'shortener') {
-        allNodes.forEach(n => {
-          const match = n.innerText.includes('Admin') || n.innerText.includes('Shortener') || n.innerText.includes('Redis') || n.innerText.includes('Vercel');
-          if (!match) {
-            n.style.opacity = '0.25';
-            n.style.filter = 'grayscale(0.8)';
-          }
-        });
-      } else if (flowName === 'crawler') {
-        allNodes.forEach(n => {
-          const match = n.innerText.includes('Crawler') || n.innerText.includes('Event') || n.innerText.includes('Parent') || n.innerText.includes('Student') || n.innerText.includes('Redis');
-          if (!match) {
-            n.style.opacity = '0.25';
-            n.style.filter = 'grayscale(0.8)';
-          }
-        });
-      }
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     function toggleTheme() {
       const current = document.documentElement.getAttribute('data-theme');
-      const next = current === 'light' ? 'dark' : 'light';
+      const next = current === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
-      document.getElementById('theme-icon').innerText = next === 'light' ? '☀️' : '🌙';
+      document.getElementById('theme-btn-icon').innerText = next === 'dark' ? '☀️' : '🌙';
+    }
+
+    async function copyLatexCode() {
+      try {
+        const res = await fetch('architecture.tex');
+        let code = '';
+        if (res.ok) {
+          code = await res.text();
+        } else {
+          code = `% Open architecture.tex in the root directory to view complete LaTeX code`;
+        }
+        await navigator.clipboard.writeText(code);
+        alert('LaTeX TikZ source code copied to clipboard successfully!');
+      } catch (e) {
+        window.open('architecture.tex', '_blank');
+      }
     }
   </script>
 </body>
