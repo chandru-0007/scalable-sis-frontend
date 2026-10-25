@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
 import {
   Users,
@@ -22,15 +23,17 @@ import {
 } from 'lucide-react';
 
 export default function ParentPortalView() {
-  const [rollNumber, setRollNumber] = useState('22CS014');
+  const { user } = useAuth();
+  const defaultRoll = user?.wardRollNumber || '22CS014';
+  const [rollNumber, setRollNumber] = useState(defaultRoll);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSlipModal, setShowSlipModal] = useState(false);
 
   useEffect(() => {
-    fetchReport('22CS014');
-  }, []);
+    fetchReport(defaultRoll);
+  }, [defaultRoll]);
 
   async function fetchReport(roll) {
     if (!roll || !roll.trim()) return;
@@ -516,7 +519,7 @@ export default function ParentPortalView() {
 
 const styles = {
   container: {
-    padding: '28px 32px 60px',
+    padding: '24px 32px 48px',
     maxWidth: '1440px',
     margin: '0 auto',
   },
@@ -529,14 +532,14 @@ const styles = {
     gap: '16px',
   },
   title: {
-    fontSize: '1.45rem',
-    fontWeight: '800',
-    color: '#0F172A',
+    fontSize: '24px',
+    fontWeight: '600',
+    color: 'var(--text-heading)',
     letterSpacing: '-0.02em',
   },
   subtitle: {
-    fontSize: '0.82rem',
-    color: '#64748B',
+    fontSize: '13px',
+    color: 'var(--text-muted)',
     marginTop: '2px',
   },
   searchBlock: {
@@ -556,23 +559,24 @@ const styles = {
     gap: '6px',
   },
   pillBtn: {
-    background: '#FFFFFF',
-    border: '1px solid #E2E8F0',
-    borderRadius: '6px',
-    padding: '2px 8px',
-    fontSize: '0.72rem',
-    fontWeight: '600',
-    color: '#0C4A3E',
+    background: 'var(--bg-surface)',
+    border: '1px solid var(--border)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '3px 8px',
+    fontSize: '11px',
+    fontWeight: '500',
+    color: 'var(--primary-blue)',
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    boxShadow: 'var(--shadow-small-btn)',
+    transition: 'all var(--transition-fast)',
   },
   errorBox: {
-    padding: '14px 18px',
-    backgroundColor: '#FEF2F2',
-    border: '1px solid #FECACA',
-    borderRadius: '10px',
-    color: '#DC2626',
-    fontSize: '0.85rem',
+    padding: '12px 16px',
+    backgroundColor: 'var(--error-bg)',
+    border: '1px solid var(--error-border)',
+    borderRadius: 'var(--radius-md)',
+    color: 'var(--error)',
+    fontSize: '13px',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
@@ -591,39 +595,39 @@ const styles = {
     flexWrap: 'wrap',
   },
   avatarLarge: {
-    width: '60px',
-    height: '60px',
+    width: '56px',
+    height: '56px',
     borderRadius: '50%',
-    backgroundColor: '#0C4A3E',
-    color: '#10B981',
-    fontWeight: '800',
-    fontSize: '1.45rem',
+    backgroundColor: 'var(--primary-subtle)',
+    color: 'var(--primary-blue)',
+    fontWeight: '700',
+    fontSize: '20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '2px solid #10B981',
-    boxShadow: '0 0 16px rgba(16, 185, 129, 0.25)',
+    border: '1px solid var(--primary-border)',
+    boxShadow: 'var(--shadow-small-btn)',
   },
   wardName: {
-    fontSize: '1.35rem',
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: '-0.02em',
+    fontSize: '20px',
+    fontWeight: '600',
+    color: 'var(--text-heading)',
+    letterSpacing: '-0.015em',
   },
   wardMeta: {
     display: 'flex',
     gap: '10px',
-    fontSize: '0.82rem',
-    color: '#64748B',
-    marginTop: '6px',
+    fontSize: '13px',
+    color: 'var(--text-muted)',
+    marginTop: '4px',
     flexWrap: 'wrap',
   },
   statusBadge: {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
-    padding: '14px 22px',
-    borderRadius: '12px',
+    padding: '12px 20px',
+    borderRadius: 'var(--radius-md)',
     border: '1px solid',
     marginLeft: 'auto',
   },
@@ -637,18 +641,18 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     padding: '12px 14px',
-    backgroundColor: '#F8FAFC',
-    borderRadius: '10px',
-    border: '1px solid #E2E8F0',
+    backgroundColor: 'var(--bg-surface-secondary)',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border)',
   },
   advisorAvatar: {
     width: '40px',
     height: '40px',
-    borderRadius: '8px',
-    backgroundColor: '#0C4A3E',
+    borderRadius: 'var(--radius-sm)',
+    backgroundColor: 'var(--primary-blue)',
     color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: '0.85rem',
+    fontWeight: '600',
+    fontSize: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -658,45 +662,47 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '10px 14px',
-    backgroundColor: '#ECFDF5',
-    borderRadius: '8px',
-    border: '1px solid #A7F3D0',
+    backgroundColor: 'var(--primary-subtle)',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--primary-border)',
+    color: 'var(--primary-blue)',
+    fontSize: '13px',
   },
   noticeItem: {
     display: 'flex',
     gap: '14px',
     padding: '14px 16px',
-    backgroundColor: '#F8FAFC',
-    borderRadius: '10px',
-    border: '1px solid #E2E8F0',
+    backgroundColor: 'var(--bg-surface-secondary)',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border)',
   },
   noticeIconBox: {
     width: '36px',
     height: '36px',
-    borderRadius: '8px',
-    backgroundColor: '#ECFDF5',
-    border: '1px solid #A7F3D0',
+    borderRadius: 'var(--radius-sm)',
+    backgroundColor: 'var(--primary-subtle)',
+    border: '1px solid var(--primary-border)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   noticeTitle: {
-    fontWeight: '700',
-    fontSize: '0.9rem',
-    color: '#0F172A',
+    fontWeight: '600',
+    fontSize: '14px',
+    color: 'var(--text-heading)',
   },
   noticeContent: {
-    fontSize: '0.8rem',
-    color: '#475569',
+    fontSize: '13px',
+    color: 'var(--text-body)',
     marginTop: '4px',
     lineHeight: '1.4',
   },
   noticeMeta: {
     display: 'flex',
     gap: '8px',
-    fontSize: '0.72rem',
-    color: '#64748B',
+    fontSize: '11px',
+    color: 'var(--text-muted)',
     marginTop: '6px',
     flexWrap: 'wrap',
   },

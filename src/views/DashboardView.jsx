@@ -34,14 +34,17 @@ export default function DashboardView({ onNavigate }) {
           api.notices.getAll(),
         ]);
 
-        if (courseRes.status === 'fulfilled' && courseRes.value.courses) {
-          setCourses(courseRes.value.courses);
+        if (courseRes.status === 'fulfilled' && courseRes.value) {
+          const cList = courseRes.value.courses || (Array.isArray(courseRes.value) ? courseRes.value : []);
+          if (cList.length > 0) setCourses(cList);
         }
-        if (timetableRes.status === 'fulfilled' && Array.isArray(timetableRes.value)) {
-          setTimetable(timetableRes.value);
+        if (timetableRes.status === 'fulfilled' && timetableRes.value) {
+          const tbList = timetableRes.value.timetable || (Array.isArray(timetableRes.value) ? timetableRes.value : []);
+          if (tbList.length > 0) setTimetable(tbList);
         }
-        if (noticeRes.status === 'fulfilled' && Array.isArray(noticeRes.value)) {
-          setNotices(noticeRes.value);
+        if (noticeRes.status === 'fulfilled' && noticeRes.value) {
+          const ntList = noticeRes.value.notices || (Array.isArray(noticeRes.value) ? noticeRes.value : []);
+          if (ntList.length > 0) setNotices(ntList);
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err);
@@ -397,7 +400,7 @@ export default function DashboardView({ onNavigate }) {
 
 const styles = {
   container: {
-    padding: '28px 32px 60px',
+    padding: '24px 32px 48px',
     maxWidth: '1440px',
     margin: '0 auto',
   },
@@ -405,7 +408,7 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '20px',
-    marginBottom: '28px',
+    marginBottom: '24px',
   },
   mainGrid: {
     display: 'grid',
@@ -429,23 +432,29 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '16px',
-    padding: '12px 14px',
-    backgroundColor: '#F8FAFC',
-    borderRadius: '10px',
-    border: '1px solid #E2E8F0',
+    padding: '14px 18px',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'var(--glass-blur-subtle)',
+    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
+    borderRadius: '18px',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid #FFFFFF',
+    boxShadow: '0 4px 14px rgba(100, 116, 139, 0.06), inset 0 1px 1px #FFFFFF',
+    transition: 'all 180ms var(--spring-easing)',
   },
   timeBadge: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
-    fontSize: '0.78rem',
+    fontSize: '12px',
     fontWeight: '700',
-    color: '#0C4A3E',
-    backgroundColor: '#ECFDF5',
-    border: '1px solid #A7F3D0',
-    padding: '6px 10px',
-    borderRadius: '8px',
+    color: 'var(--primary-blue)',
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    border: '1px solid rgba(2, 132, 199, 0.28)',
+    padding: '6px 14px',
+    borderRadius: 'var(--radius-full)',
     whiteSpace: 'nowrap',
+    boxShadow: 'inset 0 1px 1px #FFFFFF',
   },
   sessionDetails: {
     flex: 1,
@@ -457,15 +466,15 @@ const styles = {
     marginBottom: '4px',
   },
   courseTitle: {
-    fontWeight: '600',
-    fontSize: '0.88rem',
-    color: '#0F172A',
+    fontWeight: '700',
+    fontSize: '14.5px',
+    color: 'var(--text-main)',
   },
   courseSub: {
     display: 'flex',
     gap: '16px',
-    fontSize: '0.75rem',
-    color: '#64748B',
+    fontSize: '12px',
+    color: 'var(--text-muted)',
   },
   iconText: {
     display: 'flex',
@@ -483,19 +492,24 @@ const styles = {
     alignItems: 'center',
   },
   noticeClashAlert: {
-    backgroundColor: '#FFFBEB',
+    backgroundColor: '#FEF3C7',
     border: '1px solid #FDE68A',
-    borderRadius: '10px',
-    padding: '12px 14px',
+    borderRadius: '18px',
+    padding: '14px 18px',
+    boxShadow: '0 4px 14px rgba(217, 119, 6, 0.12)',
   },
   noticeCard: {
-    backgroundColor: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    borderRadius: '10px',
-    padding: '12px 14px',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'var(--glass-blur-subtle)',
+    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid #FFFFFF',
+    borderRadius: '18px',
+    padding: '14px 18px',
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
+    gap: '5px',
+    boxShadow: '0 4px 14px rgba(100, 116, 139, 0.06), inset 0 1px 1px #FFFFFF',
   },
   noticeTop: {
     display: 'flex',
@@ -503,22 +517,22 @@ const styles = {
     alignItems: 'center',
   },
   noticeTitle: {
-    fontWeight: '600',
-    fontSize: '0.85rem',
-    color: '#0F172A',
+    fontWeight: '700',
+    fontSize: '14px',
+    color: 'var(--text-main)',
   },
   noticeBody: {
-    fontSize: '0.78rem',
-    color: '#475569',
-    lineHeight: '1.4',
+    fontSize: '13px',
+    color: 'var(--text-secondary)',
+    lineHeight: '1.45',
   },
   noticeShortLink: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    color: '#10B981',
-    fontWeight: '600',
-    fontSize: '0.75rem',
+    color: 'var(--primary-blue)',
+    fontWeight: '700',
+    fontSize: '12.5px',
     textDecoration: 'none',
     marginTop: '4px',
   },
@@ -526,40 +540,42 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '14px',
-    padding: '10px 0',
-    borderBottom: '1px solid #F1F5F9',
+    padding: '12px 0',
+    borderBottom: '1px solid var(--glass-border)',
   },
   deadlineDateBox: {
-    width: '42px',
-    height: '42px',
-    borderRadius: '8px',
-    backgroundColor: '#F1F5F9',
-    border: '1px solid #E2E8F0',
+    width: '46px',
+    height: '46px',
+    borderRadius: '14px',
+    backgroundColor: 'rgba(2, 132, 199, 0.08)',
+    border: '1px solid rgba(2, 132, 199, 0.25)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    boxShadow: 'inset 0 1px 1.5px #FFFFFF',
   },
   deadlineDay: {
-    fontSize: '0.95rem',
+    fontSize: '17px',
     fontWeight: '800',
-    color: '#0F172A',
+    color: 'var(--primary-blue)',
     lineHeight: '1',
   },
   deadlineMonth: {
-    fontSize: '0.62rem',
+    fontSize: '10px',
     fontWeight: '700',
-    color: '#64748B',
+    color: 'var(--primary-blue)',
     textTransform: 'uppercase',
+    letterSpacing: '0.04em',
   },
   deadlineTitle: {
-    fontWeight: '600',
-    fontSize: '0.84rem',
-    color: '#0F172A',
+    fontWeight: '700',
+    fontSize: '13.5px',
+    color: 'var(--text-main)',
   },
   deadlineSub: {
-    fontSize: '0.73rem',
-    color: '#64748B',
+    fontSize: '12px',
+    color: 'var(--text-muted)',
   },
 };

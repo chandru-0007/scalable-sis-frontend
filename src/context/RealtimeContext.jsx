@@ -242,14 +242,21 @@ export function RealtimeProvider({ children }) {
           const isWarning = t.type === 'warning';
           const isPurple = t.type === 'purple';
 
-          const accentColor = isSuccess ? '#10B981' : isWarning ? '#F59E0B' : isPurple ? '#8B5CF6' : '#3B82F6';
-          const bgGlow = isSuccess
-            ? 'rgba(16, 185, 129, 0.12)'
+          const accentColor = isSuccess ? '#16A34A' : isWarning ? '#D97706' : isPurple ? '#7C3AED' : '#0284C7';
+          const bgBadge = isSuccess
+            ? '#DCFCE7'
             : isWarning
-            ? 'rgba(245, 158, 11, 0.14)'
+            ? '#FEF3C7'
             : isPurple
-            ? 'rgba(139, 92, 246, 0.14)'
-            : 'rgba(59, 130, 246, 0.12)';
+            ? '#F3E8FF'
+            : '#E0F2FE';
+          const borderBadge = isSuccess
+            ? '#86EFAC'
+            : isWarning
+            ? '#FDE68A'
+            : isPurple
+            ? '#DDD6FE'
+            : '#BAE6FD';
 
           const IconComponent = isSuccess ? CheckCircle : isWarning ? AlertTriangle : isPurple ? Zap : Activity;
 
@@ -258,12 +265,10 @@ export function RealtimeProvider({ children }) {
               key={t.id}
               style={{
                 ...toastStyles.card,
-                borderLeft: `4px solid ${accentColor}`,
-                boxShadow: `0 8px 24px -4px rgba(0,0,0,0.2), 0 0 16px ${bgGlow}`,
               }}
-              className="animate-slide-down"
+              className="animate-fade-in"
             >
-              <div style={{ ...toastStyles.iconCircle, backgroundColor: bgGlow, color: accentColor }}>
+              <div style={{ ...toastStyles.iconCircle, backgroundColor: bgBadge, color: accentColor, border: `1px solid ${borderBadge}` }}>
                 <IconComponent size={18} />
               </div>
 
@@ -280,7 +285,7 @@ export function RealtimeProvider({ children }) {
                 style={toastStyles.closeBtn}
                 title="Dismiss"
               >
-                <X size={14} color="#94A3B8" />
+                <X size={15} color="#64748B" />
               </button>
             </div>
           );
@@ -301,38 +306,42 @@ export function useRealtime() {
 const toastStyles = {
   container: {
     position: 'fixed',
-    bottom: '24px',
-    right: '24px',
+    bottom: '28px',
+    right: '28px',
     zIndex: 9999,
     display: 'flex',
     flexDirection: 'column-reverse',
-    gap: '10px',
+    gap: '12px',
     pointerEvents: 'none',
-    maxWidth: '420px',
-    width: 'calc(100vw - 48px)',
+    maxWidth: '430px',
+    width: 'calc(100vw - 56px)',
   },
   card: {
     pointerEvents: 'auto',
-    backgroundColor: '#0F172A',
-    color: '#FFFFFF',
-    borderRadius: '12px',
-    padding: '12px 14px',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    backdropFilter: 'blur(28px) saturate(190%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(190%)',
+    color: '#0F172A',
+    borderRadius: '20px',
+    border: '1px solid rgba(255, 255, 255, 0.95)',
+    borderTop: '1.5px solid #FFFFFF',
+    padding: '14px 16px',
     display: 'flex',
     alignItems: 'flex-start',
     gap: '12px',
-    backdropFilter: 'blur(16px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
+    boxShadow: '0 16px 40px -4px rgba(100, 116, 139, 0.18), 0 4px 14px rgba(135, 206, 235, 0.16), inset 0 1px 1px #FFFFFF',
     transition: 'all 0.25s ease',
   },
   iconCircle: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
+    width: '34px',
+    height: '34px',
+    borderRadius: '11px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    marginTop: '2px',
+    marginTop: '1px',
+    boxShadow: 'inset 0 1px 1px #FFFFFF',
   },
   content: {
     flex: 1,
@@ -346,20 +355,21 @@ const toastStyles = {
     marginBottom: '3px',
   },
   title: {
-    fontSize: '0.85rem',
+    fontSize: '0.88rem',
     fontWeight: '700',
-    color: '#F8FAFC',
-    letterSpacing: '-0.01em',
+    color: '#0F172A',
+    letterSpacing: '-0.015em',
   },
   timeBadge: {
-    fontSize: '0.68rem',
-    color: '#94A3B8',
+    fontSize: '0.7rem',
+    color: '#64748B',
     fontFamily: 'monospace',
+    fontWeight: '500',
   },
   message: {
-    fontSize: '0.78rem',
-    color: '#CBD5E1',
-    lineHeight: '1.35',
+    fontSize: '0.8rem',
+    color: '#334155',
+    lineHeight: '1.4',
   },
   closeBtn: {
     background: 'none',
@@ -369,7 +379,8 @@ const toastStyles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: 0.7,
-    transition: 'opacity 0.15s ease',
+    opacity: 0.75,
+    borderRadius: '50%',
+    transition: 'opacity 0.15s ease, background 0.15s ease',
   },
 };

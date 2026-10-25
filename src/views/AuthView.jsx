@@ -72,11 +72,11 @@ export default function AuthView() {
 
   return (
     <div style={styles.container}>
-      {/* ─── Left Brand Panel (Emerald Green from Figma) ─── */}
+      {/* ─── Left Brand Panel (Soft UI Evolution Frosted Liquid Glass) ─── */}
       <div style={styles.brandPanel}>
         <div style={styles.brandTop}>
           <div style={styles.brandLogoBox}>
-            <GraduationCap size={28} color="#FFFFFF" />
+            <GraduationCap size={26} color="#FFFFFF" />
           </div>
           <span style={styles.brandLogoText}>SIS Portal</span>
         </div>
@@ -87,16 +87,16 @@ export default function AuthView() {
           </h1>
           <p style={styles.brandSubhead}>
             Register for courses, track attendance, view grades and timetables —
-            built to stay fast as the university grows.
+            built with distributed scale to stay fast as the university grows.
           </p>
 
           <div style={styles.featureList}>
             <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>
-                <ShieldCheck size={18} color="#A7F3D0" />
+              <div style={{ ...styles.featureIcon, backgroundColor: '#DCFCE7', border: '1px solid #86EFAC' }}>
+                <ShieldCheck size={18} color="#15803D" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Sharded student & course records</div>
+                <div style={styles.featureTitle}>Sharded student &amp; course records</div>
                 <div style={styles.featureDesc}>
                   Partitioned dynamically via Consistent Hashing across multiple MongoDB shard clusters.
                 </div>
@@ -104,8 +104,8 @@ export default function AuthView() {
             </div>
 
             <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>
-                <Zap size={18} color="#FDE68A" />
+              <div style={{ ...styles.featureIcon, backgroundColor: '#FEF3C7', border: '1px solid #FDE68A' }}>
+                <Zap size={18} color="#D97706" />
               </div>
               <div>
                 <div style={styles.featureTitle}>Rate-limited, secure authentication</div>
@@ -116,11 +116,11 @@ export default function AuthView() {
             </div>
 
             <div style={styles.featureItem}>
-              <div style={styles.featureIcon}>
-                <Search size={18} color="#BFDBFE" />
+              <div style={{ ...styles.featureIcon, backgroundColor: '#E0F2FE', border: '1px solid #BAE6FD' }}>
+                <Search size={18} color="#0284C7" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Instant course & student search</div>
+                <div style={styles.featureTitle}>Instant course &amp; student search</div>
                 <div style={styles.featureDesc}>
                   In-memory Prefix Trie autocomplete delivers suggestions in under 6 milliseconds.
                 </div>
@@ -151,8 +151,9 @@ export default function AuthView() {
           </div>
 
           {/* Tab Switcher */}
-          <div style={styles.tabContainer}>
+          <div style={styles.tabContainer} className="pill-tab-bar">
             <button
+              type="button"
               onClick={() => { setTab('login'); setError(null); }}
               style={{
                 ...styles.tabBtn,
@@ -162,6 +163,7 @@ export default function AuthView() {
               Sign in
             </button>
             <button
+              type="button"
               onClick={() => { setTab('register'); setError(null); }}
               style={{
                 ...styles.tabBtn,
@@ -175,13 +177,13 @@ export default function AuthView() {
           {/* Error / Success message */}
           {error && (
             <div style={styles.errorAlert}>
-              <AlertTriangle size={16} color="#DC2626" />
+              <AlertTriangle size={16} color="#BE123C" />
               <span>{error}</span>
             </div>
           )}
           {successMsg && (
             <div style={styles.successAlert}>
-              <ShieldCheck size={16} color="#059669" />
+              <ShieldCheck size={16} color="#15803D" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -239,15 +241,15 @@ export default function AuthView() {
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary"
-                style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
+                style={{ width: '100%', height: '46px', fontSize: '15px' }}
               >
                 {loading ? <span className="spinner" /> : 'Sign in to Portal'}
               </button>
 
-              {/* Rate limit warning box matching Figma */}
+              {/* Rate limit warning box matching Soft UI tokens */}
               <div style={styles.rateLimitNotice}>
                 <Zap size={14} color="#D97706" />
-                <span>Login attempts are rate-limited: 5 per minute per IP.</span>
+                <span>Login attempts are rate-limited: 5 per minute per IP via Redis.</span>
               </div>
 
               {/* Viva Quick Demo Fillers */}
@@ -379,7 +381,7 @@ export default function AuthView() {
                 type="submit"
                 disabled={loading}
                 className="btn btn-primary"
-                style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
+                style={{ width: '100%', height: '46px', fontSize: '15px' }}
               >
                 {loading ? <span className="spinner" /> : 'Register & Assign Shard'}
               </button>
@@ -396,13 +398,26 @@ const styles = {
     display: 'flex',
     minHeight: '100vh',
     width: '100vw',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'transparent',
+    padding: '32px',
+    gap: '32px',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    zIndex: 1,
   },
   brandPanel: {
     flex: '1 1 45%',
-    background: 'linear-gradient(135deg, #062b24 0%, #0C4A3E 60%, #0F5132 100%)',
-    color: '#FFFFFF',
-    padding: '60px 54px',
+    maxWidth: '560px',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'blur(32px) saturate(190%)',
+    WebkitBackdropFilter: 'blur(32px) saturate(190%)',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid var(--glass-border-highlight)',
+    borderRadius: '28px',
+    boxShadow: 'var(--glass-shadow-elevated)',
+    color: 'var(--text-main)',
+    padding: '52px 46px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
@@ -417,41 +432,41 @@ const styles = {
   brandLogoBox: {
     width: '46px',
     height: '46px',
-    borderRadius: '12px',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    border: '1px solid rgba(255, 255, 255, 0.25)',
+    borderRadius: '14px',
+    background: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)',
+    borderTop: '1.5px solid rgba(255, 255, 255, 0.7)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    boxShadow: '0 8px 20px rgba(2, 132, 199, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
   },
   brandLogoText: {
-    fontSize: '1.4rem',
+    fontSize: '1.45rem',
     fontWeight: '800',
-    letterSpacing: '-0.02em',
+    color: 'var(--text-main)',
+    letterSpacing: '-0.025em',
   },
   brandContent: {
-    maxWidth: '520px',
-    margin: '40px 0',
+    margin: '36px 0',
   },
   brandHeadline: {
-    fontSize: '2.5rem',
+    fontSize: '2.4rem',
     fontWeight: '800',
     lineHeight: '1.2',
     letterSpacing: '-0.03em',
-    color: '#FFFFFF',
-    marginBottom: '18px',
+    color: 'var(--text-main)',
+    marginBottom: '16px',
   },
   brandSubhead: {
     fontSize: '1.05rem',
     lineHeight: '1.6',
-    color: '#D1FAE5',
-    marginBottom: '36px',
+    color: 'var(--text-secondary)',
+    marginBottom: '32px',
   },
   featureList: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '18px',
   },
   featureItem: {
     display: 'flex',
@@ -459,87 +474,96 @@ const styles = {
     alignItems: 'flex-start',
   },
   featureIcon: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: '36px',
+    height: '36px',
+    borderRadius: '11px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    boxShadow: 'inset 0 1px 1px #FFFFFF',
   },
   featureTitle: {
-    fontWeight: '600',
-    fontSize: '0.95rem',
-    color: '#FFFFFF',
-    marginBottom: '3px',
+    fontWeight: '700',
+    fontSize: '0.96rem',
+    color: 'var(--text-main)',
+    marginBottom: '2px',
   },
   featureDesc: {
-    fontSize: '0.82rem',
-    color: '#A7F3D0',
-    lineHeight: '1.4',
+    fontSize: '0.84rem',
+    color: 'var(--text-muted)',
+    lineHeight: '1.45',
   },
   brandFooter: {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontSize: '0.75rem',
-    color: '#6EE7B7',
-    fontWeight: '500',
+    fontSize: '0.8rem',
+    color: 'var(--text-muted)',
+    fontWeight: '600',
+    borderTop: '1px solid var(--glass-border)',
+    paddingTop: '18px',
   },
   formPanel: {
-    flex: '1 1 55%',
+    flex: '1 1 50%',
+    maxWidth: '520px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '40px 30px',
   },
   formCard: {
     width: '100%',
-    maxWidth: '460px',
-    backgroundColor: '#FFFFFF',
-    borderRadius: '20px',
-    border: '1px solid #E2E8F0',
-    padding: '36px 38px',
-    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    backdropFilter: 'blur(32px) saturate(200%)',
+    WebkitBackdropFilter: 'blur(32px) saturate(200%)',
+    borderRadius: '28px',
+    border: '1px solid var(--glass-border-light)',
+    borderTop: '1.5px solid #FFFFFF',
+    padding: '40px 42px',
+    boxShadow: 'var(--glass-shadow-elevated)',
   },
   formHeader: {
-    marginBottom: '24px',
+    marginBottom: '22px',
   },
   formTitle: {
-    fontSize: '1.6rem',
+    fontSize: '28px',
     fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: '-0.02em',
+    color: 'var(--text-main)',
+    letterSpacing: '-0.025em',
     marginBottom: '6px',
   },
   formSubtitle: {
-    fontSize: '0.85rem',
-    color: '#64748B',
+    fontSize: '14px',
+    color: 'var(--text-muted)',
   },
   tabContainer: {
     display: 'flex',
-    backgroundColor: '#F1F5F9',
-    borderRadius: '10px',
-    padding: '4px',
-    marginBottom: '22px',
+    backgroundColor: 'rgba(240, 244, 248, 0.75)',
+    backdropFilter: 'var(--glass-blur-subtle)',
+    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
+    borderRadius: 'var(--radius-full)',
+    padding: '5px',
+    marginBottom: '24px',
+    border: '1px solid var(--glass-border)',
   },
   tabBtn: {
     flex: 1,
-    padding: '8px 14px',
+    padding: '9px 16px',
     border: 'none',
     backgroundColor: 'transparent',
-    fontWeight: '600',
-    fontSize: '0.85rem',
-    color: '#64748B',
-    borderRadius: '8px',
+    fontWeight: '500',
+    fontSize: '13.5px',
+    color: 'var(--text-muted)',
+    borderRadius: 'var(--radius-full)',
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
+    transition: 'all 180ms var(--spring-easing)',
+    textAlign: 'center',
   },
   tabBtnActive: {
     backgroundColor: '#FFFFFF',
-    color: '#0F172A',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.06)',
+    color: 'var(--primary-blue)',
+    boxShadow: '0 4px 14px rgba(100, 116, 139, 0.12), inset 0 1px 1.5px #FFFFFF',
+    fontWeight: '700',
   },
   inputWrapper: {
     position: 'relative',
@@ -548,89 +572,96 @@ const styles = {
   },
   inputIcon: {
     position: 'absolute',
-    left: '12px',
+    left: '14px',
     pointerEvents: 'none',
+    color: 'var(--text-muted)',
   },
   formRow: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '20px',
-    fontSize: '0.82rem',
+    fontSize: '13px',
   },
   checkboxLabel: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#475569',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
   },
   forgotLink: {
-    color: '#10B981',
+    color: 'var(--primary-blue)',
     fontWeight: '600',
     textDecoration: 'none',
   },
   rateLimitNotice: {
     marginTop: '16px',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    backgroundColor: '#FFFBEB',
+    padding: '11px 16px',
+    borderRadius: '16px',
+    backgroundColor: '#FEF3C7',
     border: '1px solid #FDE68A',
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    fontSize: '0.78rem',
-    color: '#92400E',
-    fontWeight: '500',
+    fontSize: '12px',
+    color: '#B45309',
+    fontWeight: '600',
   },
   demoBox: {
     marginTop: '22px',
     paddingTop: '18px',
-    borderTop: '1px dashed #CBD5E1',
+    borderTop: '1px solid var(--glass-border)',
   },
   demoTitle: {
-    fontSize: '0.68rem',
+    fontSize: '11px',
     fontWeight: '700',
-    color: '#64748B',
-    letterSpacing: '0.05em',
+    color: 'var(--text-muted)',
+    letterSpacing: '0.07em',
     marginBottom: '10px',
   },
   demoGrid: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
   },
   demoBtn: {
-    padding: '7px 12px',
-    borderRadius: '8px',
-    backgroundColor: '#F8FAFC',
-    border: '1px solid #E2E8F0',
-    color: '#334155',
-    fontSize: '0.78rem',
+    padding: '9px 16px',
+    borderRadius: 'var(--radius-full)',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'var(--glass-blur-subtle)',
+    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid var(--glass-border-highlight)',
+    color: 'var(--text-main)',
+    fontSize: '12.5px',
     fontWeight: '600',
     cursor: 'pointer',
     textAlign: 'left',
-    transition: 'all 0.15s ease',
+    transition: 'all 180ms var(--spring-easing)',
+    boxShadow: '0 2px 8px rgba(100, 116, 139, 0.08), inset 0 1px 1px #FFFFFF',
   },
   errorAlert: {
-    padding: '10px 14px',
-    backgroundColor: '#FEF2F2',
-    border: '1px solid #FECACA',
-    borderRadius: '8px',
-    color: '#B91C1C',
-    fontSize: '0.82rem',
+    padding: '11px 16px',
+    backgroundColor: '#FFE4E6',
+    border: '1px solid #FECDD3',
+    borderRadius: '16px',
+    color: '#BE123C',
+    fontSize: '13px',
+    fontWeight: '600',
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     marginBottom: '16px',
   },
   successAlert: {
-    padding: '10px 14px',
-    backgroundColor: '#ECFDF5',
-    border: '1px solid #A7F3D0',
-    borderRadius: '8px',
-    color: '#047857',
-    fontSize: '0.82rem',
+    padding: '11px 16px',
+    backgroundColor: '#DCFCE7',
+    border: '1px solid #86EFAC',
+    borderRadius: '16px',
+    color: '#15803D',
+    fontSize: '13px',
+    fontWeight: '600',
     display: 'flex',
     alignItems: 'center',
     gap: '8px',

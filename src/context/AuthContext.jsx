@@ -100,12 +100,23 @@ export function AuthProvider({ children }) {
       } else if (role === 'ADMIN') {
         await login('admin@college.edu', 'Admin@123');
       } else if (role === 'PARENT') {
-        setUser({
-          studentId: 'PARENT_GUEST',
-          name: 'Parent / Guardian',
-          role: 'PARENT',
-          wardRollNumber: '22CS014',
-        });
+        try {
+          await login('parent@college.edu', 'Parent@123');
+        } catch (e) {
+          localStorage.removeItem('sis_session_token');
+          setToken(null);
+          const parentUser = {
+            studentId: 'PARENT_GUEST',
+            name: 'Parent / Guardian',
+            email: 'parent@college.edu',
+            rollNumber: 'PAR001',
+            role: 'PARENT',
+            wardRollNumber: '22CS014',
+            targetShard: 'sis_shard_1 (Ward)',
+          };
+          setUser(parentUser);
+          return parentUser;
+        }
       }
     } catch (err) {
       console.warn('Demo switch login notice:', err);
@@ -141,11 +152,27 @@ export function AuthProvider({ children }) {
           role: 'ADMIN',
           targetShard: 'sis_shard_0',
         });
+      } else if (role === 'PARENT') {
+        localStorage.removeItem('sis_session_token');
+        setToken(null);
+        setUser({
+          studentId: 'PARENT_GUEST',
+          name: 'Parent / Guardian',
+          email: 'parent@college.edu',
+          rollNumber: 'PAR001',
+          role: 'PARENT',
+          wardRollNumber: '22CS014',
+          targetShard: 'sis_shard_1 (Ward)',
+        });
       }
     }
   }
 
   async function refreshProfile() {
+    // If currently in Parent mode without a token, do not overwrite with an old session
+    if (user?.role === 'PARENT' && !localStorage.getItem('sis_session_token')) {
+      return;
+    }
     const storedToken = localStorage.getItem('sis_session_token');
     if (storedToken) {
       try {

@@ -107,22 +107,16 @@ export default function AttendanceView() {
           </p>
         </div>
 
-        <div style={styles.tabs}>
+        <div className="pill-tab-bar">
           <button
             onClick={() => setActiveTab('student')}
-            style={{
-              ...styles.tabBtn,
-              ...(activeTab === 'student' ? styles.tabBtnActive : {}),
-            }}
+            className={`pill-tab-item ${activeTab === 'student' ? 'active' : ''}`}
           >
             My Attendance
           </button>
           <button
             onClick={() => setActiveTab('faculty')}
-            style={{
-              ...styles.tabBtn,
-              ...(activeTab === 'faculty' ? styles.tabBtnActive : {}),
-            }}
+            className={`pill-tab-item ${activeTab === 'faculty' ? 'active' : ''}`}
           >
             Faculty Marking View
           </button>
@@ -442,7 +436,7 @@ export default function AttendanceView() {
 
 const styles = {
   container: {
-    padding: '28px 32px 60px',
+    padding: '24px 32px 48px',
     maxWidth: '1440px',
     margin: '0 auto',
   },
@@ -453,41 +447,45 @@ const styles = {
     marginBottom: '24px',
   },
   title: {
-    fontSize: '1.45rem',
-    fontWeight: '800',
-    color: '#0F172A',
+    fontSize: '24px',
+    fontWeight: '600',
+    color: 'var(--text-heading)',
+    letterSpacing: '-0.02em',
   },
   subtitle: {
-    fontSize: '0.8rem',
-    color: '#64748B',
+    fontSize: '13px',
+    color: 'var(--text-muted)',
+    marginTop: '2px',
   },
   tabs: {
     display: 'flex',
-    backgroundColor: '#F1F5F9',
-    borderRadius: '10px',
+    backgroundColor: 'var(--bg-surface-secondary)',
+    borderRadius: 'var(--radius-btn)',
     padding: '4px',
+    border: '1px solid var(--border)',
   },
   tabBtn: {
     padding: '7px 16px',
     border: 'none',
     backgroundColor: 'transparent',
-    fontSize: '0.82rem',
-    fontWeight: '600',
-    color: '#64748B',
-    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: 'var(--text-muted)',
+    borderRadius: 'var(--radius-sm)',
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
+    transition: 'all var(--transition-fast)',
   },
   tabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    color: '#0F172A',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.06)',
+    backgroundColor: 'var(--bg-surface)',
+    color: 'var(--primary-blue)',
+    fontWeight: '600',
+    boxShadow: 'var(--shadow-small-btn)',
   },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
     gap: '20px',
-    marginBottom: '28px',
+    marginBottom: '24px',
   },
   facultyCardBox: {
     maxWidth: '850px',
@@ -503,53 +501,61 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '14px 18px',
-    borderRadius: '10px',
-    border: '1px solid #E2E8F0',
-    transition: 'all 0.15s ease',
+    padding: '16px 20px',
+    borderRadius: '18px',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid #FFFFFF',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'var(--glass-blur-subtle)',
+    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
+    boxShadow: '0 4px 14px rgba(100, 116, 139, 0.08), inset 0 1px 1px #FFFFFF',
+    transition: 'all 180ms var(--spring-easing)',
   },
   rosterCardPresent: {
-    backgroundColor: '#ECFDF5',
-    borderColor: '#A7F3D0',
+    backgroundColor: 'rgba(220, 252, 231, 0.75)',
+    borderColor: '#86EFAC',
   },
   rosterCardAbsent: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
+    backgroundColor: 'rgba(254, 226, 226, 0.75)',
+    borderColor: '#FECDD3',
   },
   toggleBtn: {
-    padding: '6px 14px',
-    borderRadius: '6px',
+    padding: '8px 18px',
+    borderRadius: 'var(--radius-full)',
     fontWeight: '700',
-    fontSize: '0.78rem',
+    fontSize: '12px',
     cursor: 'pointer',
     border: 'none',
-    transition: 'all 0.15s ease',
+    boxShadow: 'var(--shadow-small-btn)',
+    transition: 'all 180ms var(--spring-easing)',
   },
   togglePresent: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#16A34A',
     color: '#FFFFFF',
+    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
   },
   toggleAbsent: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#E11D48',
     color: '#FFFFFF',
+    boxShadow: '0 4px 12px rgba(225, 29, 72, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.4)',
   },
   submitRow: {
     display: 'flex',
     justifyContent: 'flex-end',
-    paddingTop: '16px',
-    borderTop: '1px solid #E2E8F0',
+    paddingTop: '18px',
+    borderTop: '1px solid var(--glass-border)',
   },
   successBanner: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '12px 16px',
-    backgroundColor: '#ECFDF5',
-    border: '1px solid #A7F3D0',
-    borderRadius: '8px',
-    color: '#047857',
-    fontSize: '0.85rem',
-    fontWeight: '600',
-    marginBottom: '18px',
+    padding: '14px 18px',
+    backgroundColor: 'var(--success-bg)',
+    border: '1px solid var(--success-border)',
+    borderRadius: '16px',
+    color: 'var(--success)',
+    fontSize: '13px',
+    fontWeight: '700',
+    marginBottom: '20px',
   },
 };

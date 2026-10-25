@@ -98,7 +98,7 @@ export const api = {
     getAll: (dept = '') => request(`/api/notices${dept ? `?department=${encodeURIComponent(dept)}` : ''}`),
     getInternships: (dept = '') => request(`/api/notices/internships${dept ? `?department=${encodeURIComponent(dept)}` : ''}`),
     triggerCrawl: (dept = '') => request(`/api/notices/crawl${dept ? `?department=${encodeURIComponent(dept)}` : ''}`, { method: 'POST' }),
-    shortenUrl: (originalUrl) => request('/api/url/shorten', { method: 'POST', body: { originalUrl } }),
+    shortenUrl: (originalUrl) => request('/api/url/shorten', { method: 'POST', body: { url: originalUrl, originalUrl } }),
   },
 
   // ─── Faculty Portal ───

@@ -13,14 +13,35 @@ import FacultyPortalView from './views/FacultyPortalView';
 import AdminPortalView from './views/AdminPortalView';
 import ParentPortalView from './views/ParentPortalView';
 
+const ROLE_CONFIG = {
+  STUDENT: {
+    allowedViews: ['dashboard', 'search', 'registration', 'attendance', 'timetable', 'notifications'],
+    defaultView: 'dashboard',
+  },
+  FACULTY: {
+    allowedViews: ['faculty', 'faculty-attendance', 'faculty-grades', 'timetable', 'notifications'],
+    defaultView: 'faculty',
+  },
+  ADMIN: {
+    allowedViews: ['admin', 'admin-reschedule', 'admin-faculty', 'admin-debarment', 'system', 'notifications'],
+    defaultView: 'admin',
+  },
+  PARENT: {
+    allowedViews: ['parent', 'notifications'],
+    defaultView: 'parent',
+  },
+};
+
 export default function App() {
-  const { isAuthenticated, loading, refreshProfile } = useAuth();
+  const { user, isAuthenticated, loading, refreshProfile } = useAuth();
+  const role = (user?.role || 'STUDENT').toUpperCase();
+
   const [currentView, setCurrentView] = useState(() => {
     const hash = window.location.hash.replace('#', '').trim();
     return hash || 'dashboard';
   });
 
-  // Sync hash routing and refresh profile on view changes
+  // Sync hash routing
   React.useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.replace('#', '').trim();
@@ -32,61 +53,92 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  React.useEffect(() => {
-    if (isAuthenticated && refreshProfile) {
-      refreshProfile();
-    }
-  }, [currentView, isAuthenticated]);
-
   const handleNavigate = (view) => {
     window.location.hash = view;
     setCurrentView(view);
   };
 
-  if (loading) {
-    return (
-      <div style={styles.loadingScreen}>
-        <div style={styles.loadingBox}>
-          <div className="spinner" style={{ width: '32px', height: '32px', borderColor: 'rgba(16, 185, 129, 0.2)', borderTopColor: '#10B981' }} />
-          <div style={{ color: '#0F172A', fontWeight: '700', fontSize: '1rem', marginTop: '16px' }}>
-            Loading SIS University Portal...
-          </div>
-          <div style={{ color: '#64748B', fontSize: '0.8rem', marginTop: '4px' }}>
-            Connecting to MongoDB Atlas Shards & Upstash Cloud Redis
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Enforce role-based access control & default landing redirect
+  React.useEffect(() => {
+    if (!isAuthenticated) return;
+    const config = ROLE_CONFIG[role] || ROLE_CONFIG.STUDENT;
 
-  // If user is not authenticated, display Figma split Auth / Sign-in & Register view
-  if (!isAuthenticated) {
-    return <AuthView />;
-  }
+    // If current view is not permitted for the active persona, redirect to default landing
+    if (!config.allowedViews.includes(currentView)) {
+      handleNavigate(config.defaultView);
+    }
+  }, [role, currentView, isAuthenticated]);
+
+  React.useEffect(() => {
+    if (isAuthenticated && refreshProfile) {
+      refreshProfile();
+    }
+  }, [isAuthenticated]);
 
   return (
-    <div style={styles.layout}>
-      {/* Figma Dark Navy Sidebar */}
-      <Sidebar currentView={currentView} setCurrentView={handleNavigate} />
-
-      {/* Main Content Area */}
-      <div style={styles.mainContent}>
-        <Topbar />
-
-        <main style={styles.viewContainer}>
-          {currentView === 'dashboard' && <DashboardView onNavigate={handleNavigate} />}
-          {currentView === 'search' && <CourseSearchView />}
-          {currentView === 'registration' && <CourseSearchView />}
-          {currentView === 'attendance' && <AttendanceView />}
-          {currentView === 'timetable' && <TimetableWeeklyView />}
-          {currentView === 'notifications' && <NoticesView />}
-          {currentView === 'system' && <SystemMonitorView />}
-          {currentView === 'faculty' && <FacultyPortalView />}
-          {currentView === 'admin' && <AdminPortalView />}
-          {currentView === 'parent' && <ParentPortalView />}
-        </main>
+    <>
+      {/* Atmospheric Canvas with 3 Ambient Mesh Orbs */}
+      <div className="ambient-canvas" aria-hidden="true">
+        <div className="ambient-orb orb-sky" />
+        <div className="ambient-orb orb-pink" />
+        <div className="ambient-orb orb-lavender" />
       </div>
-    </div>
+
+      {loading ? (
+        <div style={styles.loadingScreen}>
+          <div style={styles.loadingBox}>
+            <div className="spinner" style={{ width: '36px', height: '36px', borderWidth: '3px' }} />
+            <div style={{ color: 'var(--text-main)', fontWeight: '700', fontSize: '16px', marginTop: '18px', letterSpacing: '-0.015em' }}>
+              Loading SIS University Portal...
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '6px' }}>
+              Connecting to MongoDB Atlas Shards &amp; Upstash Cloud Redis
+            </div>
+          </div>
+        </div>
+      ) : !isAuthenticated ? (
+        <AuthView />
+      ) : (
+        <div style={styles.layout}>
+          {/* Soft UI Sidebar (254px) — Role-based items only */}
+          <Sidebar currentView={currentView} setCurrentView={handleNavigate} />
+
+          {/* Main Content Area */}
+          <div style={styles.mainContent}>
+            <Topbar />
+
+            <main style={styles.viewContainer}>
+              <div style={styles.contentWrapper}>
+                {/* Student Persona Views */}
+                {currentView === 'dashboard' && <DashboardView onNavigate={handleNavigate} />}
+                {currentView === 'search' && <CourseSearchView />}
+                {currentView === 'registration' && <CourseSearchView />}
+                {currentView === 'attendance' && <AttendanceView />}
+                {currentView === 'timetable' && <TimetableWeeklyView />}
+
+                {/* Faculty Persona Views */}
+                {currentView === 'faculty' && <FacultyPortalView activeSubTab="courses" onNavigate={handleNavigate} />}
+                {currentView === 'faculty-attendance' && <FacultyPortalView activeSubTab="attendance" onNavigate={handleNavigate} />}
+                {currentView === 'faculty-grades' && <FacultyPortalView activeSubTab="grades" onNavigate={handleNavigate} />}
+
+                {/* Admin Persona Views */}
+                {currentView === 'admin' && <AdminPortalView initialTab="reschedule" onNavigate={handleNavigate} />}
+                {currentView === 'admin-reschedule' && <AdminPortalView initialTab="reschedule" onNavigate={handleNavigate} />}
+                {currentView === 'admin-faculty' && <AdminPortalView initialTab="faculty" onNavigate={handleNavigate} />}
+                {currentView === 'admin-debarment' && <AdminPortalView initialTab="debarred" onNavigate={handleNavigate} />}
+                {currentView === 'system' && <SystemMonitorView />}
+
+                {/* Parent Persona Views */}
+                {currentView === 'parent' && <ParentPortalView />}
+
+                {/* University Notices (Accessible to all roles) */}
+                {currentView === 'notifications' && <NoticesView />}
+              </div>
+            </main>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -95,8 +147,10 @@ const styles = {
     display: 'flex',
     height: '100vh',
     width: '100vw',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'transparent',
     overflow: 'hidden',
+    position: 'relative',
+    zIndex: 1,
   },
   mainContent: {
     flex: 1,
@@ -105,9 +159,17 @@ const styles = {
     height: '100vh',
     minWidth: 0,
     overflowY: 'auto',
+    backgroundColor: 'transparent',
+    position: 'relative',
   },
   viewContainer: {
     flex: 1,
+    padding: '0 16px 36px 16px',
+  },
+  contentWrapper: {
+    maxWidth: '1440px',
+    margin: '0 auto',
+    width: '100%',
   },
   loadingScreen: {
     display: 'flex',
@@ -115,17 +177,22 @@ const styles = {
     justifyContent: 'center',
     height: '100vh',
     width: '100vw',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'transparent',
+    position: 'relative',
+    zIndex: 10,
   },
   loadingBox: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '36px',
-    backgroundColor: '#FFFFFF',
-    borderRadius: '16px',
-    border: '1px solid #E2E8F0',
-    boxShadow: '0 10px 25px -5px rgba(0,0,0,0.05)',
+    padding: '44px 56px',
+    backgroundColor: 'var(--glass-bg)',
+    backdropFilter: 'var(--glass-blur)',
+    WebkitBackdropFilter: 'var(--glass-blur)',
+    borderRadius: 'var(--radius-squircle)',
+    border: '1px solid var(--glass-border)',
+    borderTop: '1.5px solid var(--glass-border-highlight)',
+    boxShadow: 'var(--glass-shadow-elevated)',
   },
 };
