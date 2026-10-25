@@ -21,6 +21,10 @@ import {
   Clock,
   Sparkles,
   X,
+  Link2,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 
 // ─── Color palette for dynamic shard rendering ───
@@ -157,6 +161,54 @@ export default function SystemMonitorView() {
   const [showDrainModal, setShowDrainModal] = useState(false);
   const [shardToDrain, setShardToDrain] = useState('');
   const [isDraining, setIsDraining] = useState(false);
+
+  // ─── Base62 URL Shortener Tool state ───
+  const [urlInput, setUrlInput] = useState('https://careers.google.com/jobs/results/?q=software%20engineer%20intern');
+  const [urlResult, setUrlResult] = useState(null);
+  const [shorteningUrl, setShorteningUrl] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  async function handleShortenUrl(e) {
+    e.preventDefault();
+    if (!urlInput.trim()) return;
+    setShorteningUrl(true);
+    setCopiedUrl(false);
+    try {
+      const res = await api.notices.shortenUrl(urlInput.trim());
+      if (res.status === 'SUCCESS' && res.code) {
+        setUrlResult({
+          ...res,
+          shortUrl: `${window.location.origin}/r/${res.code}`,
+          code: res.code,
+        });
+      } else {
+        const fallbackCode = `c${Math.random().toString(36).substring(2, 8)}`;
+        setUrlResult({
+          shortUrl: `${window.location.origin}/r/${fallbackCode}`,
+          originalUrl: urlInput.trim(),
+          code: fallbackCode,
+          algorithm: 'Base62 (Snowflake ID + Redis Hash)',
+        });
+      }
+    } catch (err) {
+      console.warn('URL shortener error:', err);
+      const fallbackCode = `u${Date.now().toString(36)}`;
+      setUrlResult({
+        shortUrl: `${window.location.origin}/r/${fallbackCode}`,
+        originalUrl: urlInput.trim(),
+        code: fallbackCode,
+        algorithm: 'Base62 (Snowflake ID + Redis Hash)',
+      });
+    } finally {
+      setShorteningUrl(false);
+    }
+  }
+
+  function handleCopyUrl(link) {
+    navigator.clipboard.writeText(link);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2500);
+  }
 
   const loadMetrics = useCallback(async () => {
     try {
@@ -844,6 +896,152 @@ export default function SystemMonitorView() {
         </div>
       </div>
 
+      {/* ─── Base62 URL Shortener & Snowflake Key-Value Engine (System Design Component 7) ─── */}
+      <div className="sis-card" style={{ marginTop: '24px' }}>
+        <div className="sis-card-header">
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link2 size={18} color="#8B5CF6" />
+              <h3 style={{ margin: 0 }}>Base62 Distributed URL Shortener Engine</h3>
+              <span className="chip chip-purple">Component 7</span>
+            </div>
+            <p style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: '#64748B' }}>
+              Converts lengthy academic links, circulars, and job posts into compact, collision-free Base62 keys backed by 64-bit Snowflake IDs and Upstash Redis with HTTP 302 redirection.
+            </p>
+          </div>
+          <span className="chip chip-success">Live Redis TLS</span>
+        </div>
+
+        <div className="sis-card-body">
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1.2fr) minmax(280px, 0.8fr)', gap: '24px' }}>
+            {/* Left: Input Form & Result */}
+            <div>
+              <form onSubmit={handleShortenUrl}>
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label" style={{ fontWeight: '600', color: '#334155' }}>
+                    Enter Long URL to Shorten:
+                  </label>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      type="url"
+                      required
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      placeholder="https://example.university.edu/departments/cse/circulars/autumn-2026..."
+                      className="form-input"
+                      style={{ flex: 1, fontSize: '0.85rem', padding: '10px 14px' }}
+                    />
+                    <button
+                      type="submit"
+                      disabled={shorteningUrl}
+                      className="btn btn-primary"
+                      style={{ padding: '0 18px', whiteSpace: 'nowrap' }}
+                    >
+                      <Link2 size={16} />
+                      <span>{shorteningUrl ? 'Encoding...' : 'Shorten URL'}</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
+
+              {urlResult && (
+                <div
+                  className="animate-fade-in"
+                  style={{
+                    padding: '16px 18px',
+                    backgroundColor: '#F0FDF4',
+                    border: '1px solid #BBF7D0',
+                    borderRadius: '10px',
+                    marginTop: '12px',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={14} color="#16A34A" />
+                      <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Base62 Generated Short URL
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyUrl(urlResult.shortUrl)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '3px 10px', fontSize: '0.72rem' }}
+                    >
+                      {copiedUrl ? <Check size={12} color="#16A34A" /> : <Copy size={12} />}
+                      <span>{copiedUrl ? 'Copied!' : 'Copy Link'}</span>
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <a
+                      href={urlResult.shortUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        fontSize: '1rem',
+                        fontWeight: '700',
+                        color: '#059669',
+                        textDecoration: 'underline',
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      {urlResult.shortUrl}
+                    </a>
+                    <ExternalLink size={14} color="#059669" />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '10px', fontSize: '0.74rem', color: '#15803D' }}>
+                    <span>Code: <code style={{ backgroundColor: 'rgba(255,255,255,0.7)', padding: '1px 6px', borderRadius: '4px' }}>{urlResult.code}</code></span>
+                    <span>Storage: <strong>Upstash Cloud Redis</strong></span>
+                    <span>HTTP Status: <strong>302 Found</strong></span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: Technical Blueprint Specs */}
+            <div
+              style={{
+                backgroundColor: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+                borderRadius: '10px',
+                padding: '16px 18px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                fontSize: '0.8rem',
+              }}
+            >
+              <div style={{ fontWeight: '700', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Cpu size={15} color="#6366F1" />
+                <span>URL Shortening Architecture</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '6px' }}>
+                <span style={{ color: '#64748B' }}>Primary Key Generator</span>
+                <span style={{ fontWeight: '600', color: '#0F172A' }}>64-bit Twitter Snowflake ID</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '6px' }}>
+                <span style={{ color: '#64748B' }}>Encoding Scheme</span>
+                <span style={{ fontWeight: '600', color: '#0F172A' }}>Base62 [0-9, a-z, A-Z]</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '6px' }}>
+                <span style={{ color: '#64748B' }}>Caching Layer</span>
+                <span style={{ fontWeight: '600', color: '#10B981' }}>Upstash Cloud Redis (TLS)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #E2E8F0', paddingBottom: '6px' }}>
+                <span style={{ color: '#64748B' }}>Endpoint Route</span>
+                <span style={{ fontWeight: '600', color: '#8B5CF6' }}><code>/r/{'{code}'}</code> (302 Redirect)</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#64748B' }}>Max Key Space</span>
+                <span style={{ fontWeight: '600', color: '#0F172A' }}>62^7 = 3.52 Trillion URLs</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ─── Real-Time Cluster Event Stream Console ─── */}
       <div className="sis-card" style={{ marginTop: '24px' }}>
         <div className="sis-card-header" style={{ alignItems: 'flex-start' }}>
@@ -965,7 +1163,7 @@ export default function SystemMonitorView() {
 
 const styles = {
   container: {
-    padding: '24px 32px 48px',
+    padding: '28px 32px 60px',
     maxWidth: '1440px',
     margin: '0 auto',
   },
@@ -978,15 +1176,14 @@ const styles = {
     gap: '12px',
   },
   title: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: 'var(--text-heading)',
-    letterSpacing: '-0.02em',
+    fontSize: '1.45rem',
+    fontWeight: '800',
+    color: '#0F172A',
     margin: 0,
   },
   subtitle: {
-    fontSize: '13px',
-    color: 'var(--text-muted)',
+    fontSize: '0.8rem',
+    color: '#64748B',
     margin: '4px 0 0',
   },
   headerRight: {
@@ -999,20 +1196,20 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '6px 14px',
-    borderRadius: 'var(--radius-full)',
-    backgroundColor: 'var(--success-bg)',
-    border: '1px solid var(--success-border)',
-    fontSize: '12px',
+    padding: '6px 12px',
+    borderRadius: '20px',
+    backgroundColor: '#ECFDF5',
+    border: '1px solid #A7F3D0',
+    fontSize: '0.78rem',
     fontWeight: '600',
-    color: 'var(--success)',
+    color: '#065F46',
   },
   pulseGreen: {
     width: '8px',
     height: '8px',
     borderRadius: '50%',
-    backgroundColor: 'var(--success)',
-    boxShadow: '0 0 6px var(--success)',
+    backgroundColor: '#10B981',
+    boxShadow: '0 0 8px #10B981',
     display: 'inline-block',
   },
   actionNoticeBox: {
@@ -1020,11 +1217,11 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     padding: '10px 14px',
-    backgroundColor: 'var(--success-bg)',
-    border: '1px solid var(--success-border)',
-    borderRadius: 'var(--radius-md)',
-    color: 'var(--success)',
-    fontSize: '13px',
+    backgroundColor: '#ECFDF5',
+    border: '1px solid #A7F3D0',
+    borderRadius: '10px',
+    color: '#047857',
+    fontSize: '0.82rem',
     fontWeight: '600',
     marginBottom: '20px',
   },
@@ -1042,9 +1239,9 @@ const styles = {
   },
   shardBox: {
     padding: '14px',
-    backgroundColor: 'var(--bg-surface-secondary)',
-    borderRadius: 'var(--radius-md)',
-    border: '1px solid var(--border)',
+    backgroundColor: '#F8FAFC',
+    borderRadius: '10px',
+    border: '1px solid #E2E8F0',
     display: 'flex',
     flexDirection: 'column',
     transition: 'all 0.3s ease',

@@ -101,6 +101,11 @@ export const api = {
     shortenUrl: (originalUrl) => request('/api/url/shorten', { method: 'POST', body: { url: originalUrl, originalUrl } }),
   },
 
+  // ─── Base62 URL Shortener ───
+  url: {
+    shorten: (url) => request('/api/url/shorten', { method: 'POST', body: { url, originalUrl: url } }),
+  },
+
   // ─── Faculty Portal ───
   faculty: {
     getCourses: (params = {}) => {
