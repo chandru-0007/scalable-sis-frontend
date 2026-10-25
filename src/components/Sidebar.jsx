@@ -21,6 +21,7 @@ import {
   X,
   Check,
   Trash2,
+  FileCheck,
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -45,6 +46,8 @@ const ROLE_NAV = {
     heading: 'ACADEMIC SERVICES',
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+      { id: 'assignments', label: 'Course Assignments', icon: FileCheck },
+      { id: 'results', label: 'Academic Results', icon: Award },
       { id: 'search', label: 'Course Catalog', icon: Search },
       { id: 'registration', label: 'Registration', icon: BookOpenCheck },
       { id: 'attendance', label: 'Attendance', icon: CalendarCheck },
@@ -56,8 +59,9 @@ const ROLE_NAV = {
     heading: 'FACULTY WORKSPACE',
     items: [
       { id: 'faculty', label: 'Teaching Courses', icon: BookOpen },
+      { id: 'faculty-assignments', label: 'Assignment Manager', icon: FileCheck },
       { id: 'faculty-attendance', label: 'Attendance Register', icon: CalendarCheck },
-      { id: 'faculty-grades', label: 'Gradebook Evaluation', icon: Award },
+      { id: 'faculty-grades', label: 'Gradebook & Results', icon: Award },
       { id: 'timetable', label: 'Faculty Timetable', icon: CalendarDays },
       { id: 'notifications', label: 'Announcements', icon: BellRing },
     ],

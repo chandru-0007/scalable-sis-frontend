@@ -72,6 +72,7 @@ export const api = {
     list: (limit = 50) => request(`/api/students?limit=${limit}`),
     getTimetable: (id) => request(`/api/students/${id}/timetable`),
     getEnrollments: (id) => request(`/api/students/${id}/enrollments`),
+    getResults: (id) => request(`/api/students/${id}/results`),
   },
 
   // ─── Courses & Autocomplete ───
@@ -126,13 +127,54 @@ export const api = {
       method: 'POST',
       body: attendanceList,
     }),
-    submitGrade: (courseCode, enrollmentId, grade, gradePoint) => request(
-      `/api/faculty/courses/${courseCode}/grades?enrollmentId=${encodeURIComponent(enrollmentId)}&grade=${encodeURIComponent(grade)}&gradePoint=${gradePoint}`,
-      { method: 'PUT' }
+    submitGrade: (courseCode, enrollmentId, grade, gradePoint, marks = null, remarks = null) => {
+      const payload = { enrollmentId, grade, gradePoint: gradePoint || 0.0 };
+      if (marks !== null) payload.marks = marks;
+      if (remarks) payload.remarks = remarks;
+      return request(`/api/faculty/courses/${courseCode}/grades`, {
+        method: 'PUT',
+        body: payload,
+      });
+    },
+    publishCourseResults: (courseCode, grades = [], facultyName = '') => request(
+      `/api/faculty/courses/${encodeURIComponent(courseCode)}/publish-results`,
+      {
+        method: 'POST',
+        body: { grades, facultyName },
+      }
     ),
     postAnnouncement: (courseCode, title, content, author) => request(
       `/api/faculty/announcements?courseCode=${encodeURIComponent(courseCode)}&title=${encodeURIComponent(title)}&content=${encodeURIComponent(content)}&author=${encodeURIComponent(author)}`,
       { method: 'POST' }
+    ),
+  },
+
+  // ─── Assignments & Continuous Assessment ───
+  assignments: {
+    getAllForStudent: (studentId) => request(`/api/assignments/student/${encodeURIComponent(studentId)}`),
+    getByCourse: (courseCode) => request(`/api/assignments/course/${encodeURIComponent(courseCode)}`),
+    create: (data) => request('/api/assignments', { method: 'POST', body: data }),
+    submit: (assignmentId, data) => request(`/api/assignments/${encodeURIComponent(assignmentId)}/submit`, {
+      method: 'POST',
+      body: data,
+    }),
+    getSubmissions: (assignmentId) => request(`/api/assignments/${encodeURIComponent(assignmentId)}/submissions`),
+    evaluate: (assignmentId, data) => request(`/api/assignments/${encodeURIComponent(assignmentId)}/evaluate`, {
+      method: 'POST',
+      body: data,
+    }),
+    delete: (assignmentId) => request(`/api/assignments/${encodeURIComponent(assignmentId)}`, { method: 'DELETE' }),
+  },
+
+  // ─── Official Published Results & Transcripts ───
+  results: {
+    getStudentResults: (studentId) => request(`/api/students/${encodeURIComponent(studentId)}/results`),
+    publishCourseResults: (courseCode, grades, facultyName) => request(
+      `/api/faculty/courses/${encodeURIComponent(courseCode)}/publish-results`,
+      {
+        method: 'POST',
+        body: { grades, facultyName },
+      }
     ),
   },
 

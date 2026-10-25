@@ -12,14 +12,16 @@ import SystemMonitorView from './views/SystemMonitorView';
 import FacultyPortalView from './views/FacultyPortalView';
 import AdminPortalView from './views/AdminPortalView';
 import ParentPortalView from './views/ParentPortalView';
+import AssignmentsView from './views/AssignmentsView';
+import ResultsView from './views/ResultsView';
 
 const ROLE_CONFIG = {
   STUDENT: {
-    allowedViews: ['dashboard', 'search', 'registration', 'attendance', 'timetable', 'notifications'],
+    allowedViews: ['dashboard', 'assignments', 'results', 'search', 'registration', 'attendance', 'timetable', 'notifications'],
     defaultView: 'dashboard',
   },
   FACULTY: {
-    allowedViews: ['faculty', 'faculty-attendance', 'faculty-grades', 'timetable', 'notifications'],
+    allowedViews: ['faculty', 'faculty-assignments', 'faculty-attendance', 'faculty-grades', 'timetable', 'notifications'],
     defaultView: 'faculty',
   },
   ADMIN: {
@@ -111,6 +113,8 @@ export default function App() {
               <div style={styles.contentWrapper}>
                 {/* Student Persona Views */}
                 {currentView === 'dashboard' && <DashboardView onNavigate={handleNavigate} />}
+                {currentView === 'assignments' && <AssignmentsView />}
+                {currentView === 'results' && <ResultsView />}
                 {currentView === 'search' && <CourseSearchView />}
                 {currentView === 'registration' && <CourseSearchView />}
                 {currentView === 'attendance' && <AttendanceView />}
@@ -118,6 +122,7 @@ export default function App() {
 
                 {/* Faculty Persona Views */}
                 {currentView === 'faculty' && <FacultyPortalView activeSubTab="courses" onNavigate={handleNavigate} />}
+                {currentView === 'faculty-assignments' && <FacultyPortalView activeSubTab="assignments" onNavigate={handleNavigate} />}
                 {currentView === 'faculty-attendance' && <FacultyPortalView activeSubTab="attendance" onNavigate={handleNavigate} />}
                 {currentView === 'faculty-grades' && <FacultyPortalView activeSubTab="grades" onNavigate={handleNavigate} />}
 
