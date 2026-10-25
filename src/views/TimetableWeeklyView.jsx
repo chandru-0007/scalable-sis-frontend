@@ -12,6 +12,7 @@ import {
   ExternalLink,
   BookOpen,
   Calendar,
+  CalendarCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../api';
