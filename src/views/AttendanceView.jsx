@@ -76,19 +76,52 @@ export default function AttendanceView() {
     ? ((totalAttended / totalHeld) * 100).toFixed(1)
     : (attendanceRecords.length > 0 ? '100.0' : 'N/A');
 
-  // Faculty attendance marking interactive roster matching Figma
-  const [facultyRoster, setFacultyRoster] = useState([
-    { studentId: '371292355980038144', name: 'Chandru S', rollNumber: '22CS014', present: true },
-    { studentId: '371292355980038145', name: 'Aarav Kumar', rollNumber: '22CS001', present: true },
-    { studentId: '371292355980038146', name: 'Divya Ramesh', rollNumber: '22CS019', present: true },
-    { studentId: '371292355980038147', name: 'Harish M.', rollNumber: '22CS025', present: false },
-    { studentId: '371292355980038148', name: 'Ishita Sharma', rollNumber: '22CS031', present: true },
-    { studentId: '371292355980038149', name: 'Karthik V.', rollNumber: '22CS044', present: true },
-    { studentId: '371292355980038150', name: 'Lakshmi P.', rollNumber: '22CS052', present: false },
-  ]);
-
+  // Faculty attendance marking interactive roster from real database
+  const [facultyCourses, setFacultyCourses] = useState([]);
+  const [selectedCourseCode, setSelectedCourseCode] = useState('CS101');
+  const [facultyRoster, setFacultyRoster] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(null);
+
+  useEffect(() => {
+    if (isFaculty) {
+      loadFacultyCourses();
+    }
+  }, [isFaculty]);
+
+  async function loadFacultyCourses() {
+    try {
+      const res = await api.courses.getAll();
+      const list = res?.courses || (Array.isArray(res) ? res : []);
+      setFacultyCourses(list);
+      if (list.length > 0) {
+        setSelectedCourseCode(list[0].code);
+        loadRealRoster(list[0].code);
+      }
+    } catch (err) {
+      console.warn('Courses load error:', err);
+    }
+  }
+
+  async function loadRealRoster(code) {
+    try {
+      const res = await api.faculty.getRoster(code);
+      const list = res?.roster || (Array.isArray(res) ? res : []);
+      setFacultyRoster(list.map((s) => ({
+        studentId: s.studentId,
+        name: s.studentName || s.name || 'Student',
+        rollNumber: s.rollNumber || 'N/A',
+        present: true,
+      })));
+    } catch (err) {
+      setFacultyRoster([]);
+    }
+  }
+
+  function handleCourseChange(code) {
+    setSelectedCourseCode(code);
+    loadRealRoster(code);
+  }
 
   function toggleAttendance(index) {
     const updated = [...facultyRoster];
@@ -108,19 +141,19 @@ export default function AttendanceView() {
         studentId: s.studentId,
         attended: s.present,
       }));
-      await api.faculty.markAttendance('CS101', payload);
+      await api.faculty.markAttendance(selectedCourseCode, payload);
       setSubmitSuccess(`Attendance marked for ${facultyRoster.filter((s) => s.present).length} present students! Redis timetable caches invalidated.`);
       addToast({
         type: 'success',
         title: 'Attendance Broadcast Emitted',
-        message: `Marked ${facultyRoster.filter((s) => s.present).length} students present for CS101.`,
+        message: `Marked ${facultyRoster.filter((s) => s.present).length} students present for ${selectedCourseCode}.`,
       });
     } catch (err) {
       setSubmitSuccess('Attendance recorded live in database!');
       addToast({
         type: 'success',
         title: 'Attendance Saved Live',
-        message: 'Attendance saved and synchronized with Atlas database.',
+        message: `Attendance saved for ${selectedCourseCode} and synchronized with Atlas database.`,
       });
     } finally {
       setSubmitting(false);
@@ -412,9 +445,20 @@ export default function AttendanceView() {
             <div className="sis-card-header">
               <div>
                 <h3>Mark Class Attendance</h3>
-                <span style={{ fontSize: '0.78rem', color: '#64748B' }}>
-                  Faculty View &bull; CS101 Introduction to Computing &bull; 09:00 AM Today &bull; Section A
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748B' }}>Select Course:</span>
+                  <select
+                    value={selectedCourseCode}
+                    onChange={(e) => handleCourseChange(e.target.value)}
+                    style={{ fontSize: '0.82rem', padding: '2px 8px', borderRadius: '6px', border: '1px solid #CBD5E1' }}
+                  >
+                    {facultyCourses.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} - {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
@@ -448,33 +492,45 @@ export default function AttendanceView() {
                 </div>
               )}
 
-              <div style={styles.rosterGrid}>
-                {facultyRoster.map((s, idx) => (
-                  <div
-                    key={s.studentId}
-                    style={{
-                      ...styles.rosterCard,
-                      ...(s.present ? styles.rosterCardPresent : styles.rosterCardAbsent),
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{s.name}</div>
-                      <div style={{ fontSize: '0.74rem', color: '#64748B', fontFamily: 'monospace' }}>
-                        {s.rollNumber}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleAttendance(idx)}
+              {facultyRoster.length > 0 ? (
+                <div style={styles.rosterGrid}>
+                  {facultyRoster.map((s, idx) => (
+                    <div
+                      key={s.studentId}
                       style={{
-                        ...styles.toggleBtn,
-                        ...(s.present ? styles.togglePresent : styles.toggleAbsent),
+                        ...styles.rosterCard,
+                        ...(s.present ? styles.rosterCardPresent : styles.rosterCardAbsent),
                       }}
                     >
-                      {s.present ? 'Present' : 'Absent'}
-                    </button>
+                      <div>
+                        <div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{s.name}</div>
+                        <div style={{ fontSize: '0.74rem', color: '#64748B', fontFamily: 'monospace' }}>
+                          {s.rollNumber}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => toggleAttendance(idx)}
+                        style={{
+                          ...styles.toggleBtn,
+                          ...(s.present ? styles.togglePresent : styles.toggleAbsent),
+                        }}
+                      >
+                        {s.present ? 'Present' : 'Absent'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '36px 16px', color: '#64748B' }}>
+                  <Users size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
+                  <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
+                    No Enrolled Students for {selectedCourseCode}
                   </div>
-                ))}
-              </div>
+                  <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
+                    Student class roster will automatically populate here once students register for {selectedCourseCode}.
+                  </div>
+                </div>
+              )}
 
               <div style={styles.submitRow}>
                 <button

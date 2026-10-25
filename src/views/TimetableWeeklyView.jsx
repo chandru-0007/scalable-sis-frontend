@@ -57,21 +57,27 @@ export default function TimetableWeeklyView() {
     'Friday 23 Oct': {},
   };
 
+  const detectedCollisions = [];
+
   timetableSlots.forEach((slot) => {
-    const rawDay = (slot.day || 'Mon').toLowerCase();
-    const matchedDay = days.find((d) => d.toLowerCase().includes(rawDay.slice(0, 3))) || 'Monday 19 Oct';
+    const rawDay = (slot.dayOfWeek || slot.day || 'Mon').trim().toLowerCase();
+    const matchedDay = days.find((d) => d.toLowerCase().startsWith(rawDay.slice(0, 3))) || 'Monday 19 Oct';
     
     // Normalize or match slot time
     let matchedTime = times[0];
-    const rawTime = slot.time || '09:00 - 10:30';
-    if (rawTime.includes('09:00')) matchedTime = '09:00 - 10:30';
-    else if (rawTime.includes('10:30')) matchedTime = '10:30 - 12:00';
-    else if (rawTime.includes('11:00') || rawTime.includes('11:30')) matchedTime = '11:30 - 13:00';
-    else if (rawTime.includes('14:00')) matchedTime = '14:00 - 15:30';
-    else if (rawTime.includes('15:30')) matchedTime = '15:30 - 17:00';
+    const rawTime = (slot.timeSlot || slot.time || '09:00 - 10:30').trim();
+    const cleanTime = rawTime.replace(/\s+/g, '');
+    const foundTime = times.find((t) => t.replace(/\s+/g, '') === cleanTime);
+    if (foundTime) {
+      matchedTime = foundTime;
+    } else if (cleanTime.includes('09:00')) matchedTime = '09:00 - 10:30';
+    else if (cleanTime.includes('10:30')) matchedTime = '10:30 - 12:00';
+    else if (cleanTime.includes('11:00') || cleanTime.includes('11:30')) matchedTime = '11:30 - 13:00';
+    else if (cleanTime.includes('14:00')) matchedTime = '14:00 - 15:30';
+    else if (cleanTime.includes('15:30')) matchedTime = '15:30 - 17:00';
 
     const isLab = (slot.courseTitle || '').toLowerCase().includes('lab');
-    scheduleMatrix[matchedDay][matchedTime] = {
+    const sessionObj = {
       code: slot.courseCode,
       title: slot.courseTitle,
       room: slot.room || 'Room TBA',
@@ -80,6 +86,38 @@ export default function TimetableWeeklyView() {
       color: isLab ? '#F5F3FF' : '#ECFDF5',
       border: isLab ? '#DDD6FE' : '#A7F3D0',
     };
+
+    if (scheduleMatrix[matchedDay][matchedTime]) {
+      const existing = scheduleMatrix[matchedDay][matchedTime];
+      if (Array.isArray(existing)) {
+        sessionObj.collision = true;
+        sessionObj.color = '#FEF3C7';
+        sessionObj.border = '#FCD34D';
+        existing.push(sessionObj);
+        detectedCollisions.push({
+          day: matchedDay,
+          time: matchedTime,
+          course1: existing[0].code,
+          course2: sessionObj.code,
+        });
+      } else {
+        existing.collision = true;
+        existing.color = '#FEF3C7';
+        existing.border = '#FCD34D';
+        sessionObj.collision = true;
+        sessionObj.color = '#FEF3C7';
+        sessionObj.border = '#FCD34D';
+        scheduleMatrix[matchedDay][matchedTime] = [existing, sessionObj];
+        detectedCollisions.push({
+          day: matchedDay,
+          time: matchedTime,
+          course1: existing.code,
+          course2: sessionObj.code,
+        });
+      }
+    } else {
+      scheduleMatrix[matchedDay][matchedTime] = sessionObj;
+    }
   });
 
   // Flattened sessions for list view
@@ -88,7 +126,11 @@ export default function TimetableWeeklyView() {
     times.forEach((time) => {
       const s = scheduleMatrix[day]?.[time];
       if (s) {
-        allSessions.push({ ...s, day, time });
+        if (Array.isArray(s)) {
+          s.forEach((item) => allSessions.push({ ...item, day, time }));
+        } else {
+          allSessions.push({ ...s, day, time });
+        }
       }
     });
   });
@@ -137,8 +179,18 @@ export default function TimetableWeeklyView() {
         </div>
       </div>
 
-      {/* Collision Alert Banner — Only shown if genuine collision exists */}
-      {timetableSlots.length > 0 && (
+      {/* Collision Alert Banner — Dynamically warns on schedule conflicts */}
+      {detectedCollisions.length > 0 ? (
+        <div style={{ ...styles.alertBanner, backgroundColor: '#FEF3C7', borderColor: '#FCD34D' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={16} color="#D97706" style={{ flexShrink: 0 }} />
+            <span style={{ color: '#92400E' }}>
+              <strong>Timetable Clash Warning:</strong> {detectedCollisions.map((c, i) => `${c.course1} overlaps with ${c.course2} (${c.day.split(' ')[0]} ${c.time})`).join('; ')}. Rescheduling recommended.
+            </span>
+          </div>
+          <span className="chip chip-warning">Schedule Collision</span>
+        </div>
+      ) : timetableSlots.length > 0 ? (
         <div style={styles.alertBanner}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <CalendarCheck size={16} color="#059669" style={{ flexShrink: 0 }} />
@@ -148,7 +200,7 @@ export default function TimetableWeeklyView() {
           </div>
           <span className="chip chip-success">Synced with Redis</span>
         </div>
-      )}
+      ) : null}
 
       {/* Zero State if 0 enrolled courses */}
       {timetableSlots.length === 0 && (
@@ -188,45 +240,46 @@ export default function TimetableWeeklyView() {
                   </td>
                   {days.map((day) => {
                     const session = scheduleMatrix[day]?.[time];
+                    const sessionList = Array.isArray(session) ? session : session ? [session] : [];
                     return (
                       <td key={day} style={styles.slotCell}>
-                        {session ? (
-                          <div
-                            style={{
-                              ...styles.sessionBox,
-                              backgroundColor: session.color,
-                              borderColor: session.border,
-                            }}
-                          >
-                            <div style={styles.sessionTop}>
-                              <span style={styles.sessionCode}>{session.code}</span>
-                              <span
-                                className={`chip ${
-                                  session.type === 'lab'
-                                    ? 'chip-purple'
-                                    : session.collision
-                                    ? 'chip-warning'
-                                    : 'chip-neutral'
-                                }`}
-                                style={{ fontSize: '0.65rem', padding: '1px 6px' }}
+                        {sessionList.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {sessionList.map((s, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  ...styles.sessionBox,
+                                  backgroundColor: s.color,
+                                  borderColor: s.border,
+                                }}
                               >
-                                {session.type}
-                              </span>
-                            </div>
-                            <div style={styles.sessionTitle}>{session.title}</div>
-                            <div style={styles.sessionMeta}>
-                              <span style={styles.iconMeta}>
-                                <MapPin size={11} /> {session.room}
-                              </span>
-                              <span style={styles.iconMeta}>
-                                <User size={11} /> {session.faculty}
-                              </span>
-                            </div>
-                            {session.note && (
-                              <div style={styles.sessionNote}>
-                                ⚡ {session.note}
+                                <div style={styles.sessionTop}>
+                                  <span style={styles.sessionCode}>{s.code}</span>
+                                  <span
+                                    className={`chip ${
+                                      s.type === 'lab'
+                                        ? 'chip-purple'
+                                        : s.collision
+                                        ? 'chip-warning'
+                                        : 'chip-neutral'
+                                    }`}
+                                    style={{ fontSize: '0.65rem', padding: '1px 6px' }}
+                                  >
+                                    {s.collision ? 'Clash' : s.type}
+                                  </span>
+                                </div>
+                                <div style={styles.sessionTitle}>{s.title}</div>
+                                <div style={styles.sessionMeta}>
+                                  <span style={styles.iconMeta}>
+                                    <MapPin size={11} /> {s.room}
+                                  </span>
+                                  <span style={styles.iconMeta}>
+                                    <User size={11} /> {s.faculty}
+                                  </span>
+                                </div>
                               </div>
-                            )}
+                            ))}
                           </div>
                         ) : (
                           <div style={styles.freePeriodBox}>
@@ -274,59 +327,67 @@ export default function TimetableWeeklyView() {
                       <span style={styles.timeBadgeText}>{t}</span>
                     </div>
                     <div style={{ flex: 1 }}>
-                      {session ? (
-                        <div
-                          style={{
-                            ...styles.daySessionCard,
-                            backgroundColor: session.color,
-                            borderColor: session.border,
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span className="mono" style={{ fontWeight: '800', fontSize: '0.92rem', color: '#0F172A' }}>
-                                {session.code}
-                              </span>
-                              <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#0F172A' }}>
-                                {session.title}
-                              </span>
-                            </div>
-                            <span
-                              className={`chip ${
-                                session.type === 'lab'
-                                  ? 'chip-purple'
-                                  : session.collision
-                                  ? 'chip-warning'
-                                  : 'chip-success'
-                              }`}
-                            >
-                              {session.type.toUpperCase()}
-                            </span>
-                          </div>
+                      {(() => {
+                        const sessionList = Array.isArray(session) ? session : session ? [session] : [];
+                        return sessionList.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {sessionList.map((s, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  ...styles.daySessionCard,
+                                  backgroundColor: s.color,
+                                  borderColor: s.border,
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span className="mono" style={{ fontWeight: '800', fontSize: '0.92rem', color: '#0F172A' }}>
+                                      {s.code}
+                                    </span>
+                                    <span style={{ fontWeight: '700', fontSize: '0.95rem', color: '#0F172A' }}>
+                                      {s.title}
+                                    </span>
+                                  </div>
+                                  <span
+                                    className={`chip ${
+                                      s.type === 'lab'
+                                        ? 'chip-purple'
+                                        : s.collision
+                                        ? 'chip-warning'
+                                        : 'chip-success'
+                                    }`}
+                                  >
+                                    {s.collision ? '⚠️ CLASH' : s.type.toUpperCase()}
+                                  </span>
+                                </div>
 
-                          <div style={{ display: 'flex', gap: '20px', marginTop: '10px', fontSize: '0.82rem', color: '#475569' }}>
-                            <span style={styles.iconMeta}>
-                              <MapPin size={14} color="#0D9488" />
-                              <strong>{session.room}</strong>
-                            </span>
-                            <span style={styles.iconMeta}>
-                              <User size={14} color="#6366F1" />
-                              <span>{session.faculty}</span>
-                            </span>
-                          </div>
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '10px', fontSize: '0.82rem', color: '#475569' }}>
+                                  <span style={styles.iconMeta}>
+                                    <MapPin size={14} color="#0D9488" />
+                                    <strong>{s.room}</strong>
+                                  </span>
+                                  <span style={styles.iconMeta}>
+                                    <User size={14} color="#6366F1" />
+                                    <span>{s.faculty}</span>
+                                  </span>
+                                </div>
 
-                          {session.note && (
-                            <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#047857', fontWeight: '600' }}>
-                              ⚡ {session.note}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div style={styles.dayFreeSlot}>
-                          <Clock size={14} color="#94A3B8" />
-                          <span>No class scheduled &bull; Study / Break Hour</span>
-                        </div>
-                      )}
+                                {s.note && (
+                                  <div style={{ marginTop: '8px', fontSize: '0.78rem', color: '#047857', fontWeight: '600' }}>
+                                    ⚡ {s.note}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={styles.dayFreeSlot}>
+                            <Clock size={14} color="#94A3B8" />
+                            <span>No class scheduled &bull; Study / Break Hour</span>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

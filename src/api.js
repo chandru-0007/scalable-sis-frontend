@@ -154,6 +154,7 @@ export const api = {
       body: payload,
     }),
     getDebarredStudents: () => request('/api/admin/attendance/debarred-report'),
+    getOverview: () => request('/api/admin/overview'),
   },
 
   // ─── Parent Portal ───

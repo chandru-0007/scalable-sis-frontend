@@ -82,6 +82,38 @@ export default function DashboardView({ onNavigate }) {
 
   const cgpaStr = gradedCount > 0 ? (totalGradePoints / gradedCount).toFixed(2) : (enrollments.length > 0 ? 'In Progress' : 'N/A');
 
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const fullDayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const currentDayIndex = new Date().getDay();
+  const currentDayShort = dayNames[currentDayIndex];
+  const currentDayFull = fullDayNames[currentDayIndex];
+
+  // Filter slots for today
+  const todaySessions = timetable.filter((slot) => {
+    const d = (slot.dayOfWeek || slot.day || '').trim().toLowerCase();
+    return d.startsWith(currentDayShort.toLowerCase());
+  });
+
+  // Dynamic collision detection across enrolled courses
+  const dynamicClashes = [];
+  const slotConflictMap = {};
+  timetable.forEach((slot) => {
+    const d = (slot.dayOfWeek || slot.day || '').trim();
+    const t = (slot.timeSlot || slot.time || '').trim();
+    if (!d || !t) return;
+    const key = `${d}_${t}`;
+    if (slotConflictMap[key]) {
+      dynamicClashes.push({
+        day: d,
+        time: t,
+        course1: slotConflictMap[key].courseCode || slotConflictMap[key].courseTitle,
+        course2: slot.courseCode || slot.courseTitle,
+      });
+    } else {
+      slotConflictMap[key] = slot;
+    }
+  });
+
   return (
     <div style={styles.container} className="animate-fade-in">
       {/* ─── 1. Stats Row ─── */}
@@ -123,7 +155,7 @@ export default function DashboardView({ onNavigate }) {
           </div>
           <div className="stat-value">{cgpaStr}</div>
           <div className="stat-meta">
-            <span className="chip chip-purple">Semester {user?.semester || 5}</span>
+            <span className="chip chip-purple">Semester {user?.semester || 7}</span>
             <span style={{ color: '#64748B', fontSize: '0.75rem' }}>
               {enrollments.length === 0 ? 'Not evaluated' : `${gradedCount}/${enrollments.length} evaluated`}
             </span>
@@ -152,7 +184,11 @@ export default function DashboardView({ onNavigate }) {
               <div>
                 <h3>Today's Timetable</h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  {timetable.length > 0 ? `${timetable.length} Active Sessions` : '0 Active Sessions'}
+                  {todaySessions.length > 0
+                    ? `${todaySessions.length} Active Sessions (${currentDayFull})`
+                    : timetable.length > 0
+                    ? `0 Sessions Today &bull; ${timetable.length} Weekly Sessions Enrolled`
+                    : '0 Active Sessions'}
                 </span>
               </div>
               <button
@@ -165,12 +201,12 @@ export default function DashboardView({ onNavigate }) {
             </div>
             <div className="sis-card-body" style={{ padding: '16px 20px' }}>
               <div style={styles.timetableList}>
-                {timetable.length > 0 ? (
-                  timetable.slice(0, 3).map((item, idx) => (
+                {todaySessions.length > 0 ? (
+                  todaySessions.map((item, idx) => (
                     <div key={idx} style={styles.timetableItem}>
                       <div style={styles.timeBadge}>
                         <Clock size={13} color="#10B981" />
-                        <span>{item.time || '09:00 - 10:00'}</span>
+                        <span>{item.timeSlot || item.time || '09:00 - 10:30'}</span>
                       </div>
                       <div style={styles.sessionDetails}>
                         <div style={styles.courseHeader}>
@@ -190,6 +226,46 @@ export default function DashboardView({ onNavigate }) {
                       </div>
                     </div>
                   ))
+                ) : timetable.length > 0 ? (
+                  <div>
+                    <div style={{ textAlign: 'center', padding: '12px 16px', color: '#64748B', backgroundColor: '#F8FAFC', borderRadius: '10px', marginBottom: '14px' }}>
+                      <span style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.84rem' }}>
+                        No Classes Scheduled on {currentDayFull}
+                      </span>
+                      <div style={{ fontSize: '0.76rem', color: '#64748B', marginTop: '2px' }}>
+                        Upcoming sessions from your confirmed weekly schedule:
+                      </div>
+                    </div>
+                    {timetable.slice(0, 3).map((item, idx) => (
+                      <div key={idx} style={{ ...styles.timetableItem, marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}>
+                          <span className="chip chip-purple" style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
+                            {item.dayOfWeek || item.day || 'Mon'}
+                          </span>
+                          <div style={{ ...styles.timeBadge, padding: '2px 6px' }}>
+                            <Clock size={11} color="#10B981" />
+                            <span style={{ fontSize: '0.72rem' }}>{item.timeSlot || item.time || '09:00 - 10:30'}</span>
+                          </div>
+                        </div>
+                        <div style={styles.sessionDetails}>
+                          <div style={styles.courseHeader}>
+                            <span style={styles.courseTitle}>{item.courseTitle || item.courseCode}</span>
+                            <span className="chip chip-info">{item.courseCode}</span>
+                          </div>
+                          <div style={styles.courseSub}>
+                            <span style={styles.iconText}>
+                              <MapPin size={12} color="#64748B" />
+                              {item.room || 'Room TBA'}
+                            </span>
+                            <span style={styles.iconText}>
+                              <User size={12} color="#64748B" />
+                              {item.instructor || 'Faculty Mentor'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '24px 16px', color: '#64748B' }}>
                     <Clock size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
@@ -197,19 +273,15 @@ export default function DashboardView({ onNavigate }) {
                       No Classes Scheduled Today
                     </div>
                     <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
-                      {enrollments.length === 0
-                        ? 'You are not enrolled in any courses yet. Select courses to build your timetable.'
-                        : 'No active lecture or laboratory slots scheduled for today.'}
+                      You are not enrolled in any courses yet. Select courses to build your timetable.
                     </div>
-                    {enrollments.length === 0 && (
-                      <button
-                        onClick={() => onNavigate && onNavigate('registration')}
-                        className="btn btn-outline btn-sm"
-                        style={{ marginTop: '12px' }}
-                      >
-                        Select Courses to Enroll
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onNavigate && onNavigate('registration')}
+                      className="btn btn-outline btn-sm"
+                      style={{ marginTop: '12px' }}
+                    >
+                      Select Courses to Enroll
+                    </button>
                   </div>
                 )}
               </div>
@@ -314,20 +386,26 @@ export default function DashboardView({ onNavigate }) {
               </button>
             </div>
             <div className="sis-card-body" style={{ padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Alert: Timetable Clash Warning from Figma */}
-              <div style={styles.noticeClashAlert}>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                  <AlertTriangle size={16} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.82rem', color: '#92400E' }}>
-                      Timetable Clash Alert
-                    </div>
-                    <div style={{ fontSize: '0.76rem', color: '#B45309', marginTop: '2px' }}>
-                      DIP (Tue 11:15) overlaps with Database Systems lab session. Rescheduling recommended.
+              {/* Dynamic Alert: Timetable Clash Warning — Only shown when real schedule collisions exist */}
+              {dynamicClashes.length > 0 && (
+                <div style={styles.noticeClashAlert}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    <AlertTriangle size={16} color="#D97706" style={{ marginTop: '2px', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontWeight: '600', fontSize: '0.82rem', color: '#92400E' }}>
+                        Timetable Clash Alert ({dynamicClashes.length} collision{dynamicClashes.length > 1 ? 's' : ''})
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: '#B45309', marginTop: '2px' }}>
+                        {dynamicClashes.map((c, i) => (
+                          <div key={i}>
+                            &bull; <strong>{c.course1}</strong> overlaps with <strong>{c.course2}</strong> ({c.day} {c.time}).
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Dynamic notices & internships from backend */}
               {notices.slice(0, 3).map((notice, idx) => (

@@ -44,18 +44,20 @@ export default function FacultyPortalView({ activeSubTab }) {
   async function loadFacultyData() {
     setLoading(true);
     try {
-      const facultyName = user?.name || 'Dr. A. Ramanathan';
-      const res = await api.faculty.getCourses({ facultyName });
-      if (Array.isArray(res) && res.length > 0) {
-        setCourses(res);
-        loadRoster(res[0].code);
+      const facultyName = user?.name || '';
+      const facultyId = user?.facultyId || user?.id || '';
+      const res = await api.faculty.getCourses({ facultyName, facultyId });
+      const courseList = Array.isArray(res) ? res : (res?.courses || []);
+      setCourses(courseList);
+      if (courseList.length > 0) {
+        loadRoster(courseList[0].code);
       } else {
-        // Fallback default
-        loadRoster('CS101');
+        setRoster([]);
       }
     } catch (err) {
       console.error('Failed to load faculty courses:', err);
-      loadRoster('CS101');
+      setCourses([]);
+      setRoster([]);
     } finally {
       setLoading(false);
     }
@@ -73,23 +75,14 @@ export default function FacultyPortalView({ activeSubTab }) {
           initialMap[s.studentId || s.enrollmentId] = true;
         });
         setAttendanceMap(initialMap);
+      } else {
+        setRoster([]);
+        setAttendanceMap({});
       }
     } catch (err) {
       console.warn('Failed to load roster:', err);
-      // Fallback roster
-      const demo = [
-        { studentId: '371292355980038144', enrollmentId: '371292720527970304', rollNumber: '22CS014', name: 'Chandru S', attendancePercentage: 93.5, grade: 'A+' },
-        { studentId: '371292355980038145', enrollmentId: '371292720527970305', rollNumber: '22CS088', name: 'Arun Kumar', attendancePercentage: 88.0, grade: 'A' },
-        { studentId: '371292355980038146', enrollmentId: '371292720527970306', rollNumber: '2024CSE105', name: 'Kavitha R', attendancePercentage: 74.0, grade: 'B' },
-        { studentId: '371292355980038147', enrollmentId: '371292720527970307', rollNumber: '22CS025', name: 'Harish M.', attendancePercentage: 82.0, grade: 'B+' },
-        { studentId: '371292355980038148', enrollmentId: '371292720527970308', rollNumber: '22CS031', name: 'Ishita Sharma', attendancePercentage: 96.0, grade: 'O' },
-      ];
-      setRoster(demo);
-      const initialMap = {};
-      demo.forEach((s) => {
-        initialMap[s.studentId] = true;
-      });
-      setAttendanceMap(initialMap);
+      setRoster([]);
+      setAttendanceMap({});
     }
   }
 
@@ -199,10 +192,12 @@ export default function FacultyPortalView({ activeSubTab }) {
     }
   }, [activeSubTab]);
 
-  const assignedCourses = courses.length > 0 ? courses : [
-    { code: 'CS101', title: 'Introduction to Computing', schedule: 'MWF 09:00 - 10:00 AM', room: 'Hall 101', enrolled: 43 },
-    { code: 'CS201', title: 'Data Structures & Algorithms', schedule: 'Tue/Thu 11:30 - 13:00', room: 'LH-110', enrolled: 58 },
-  ];
+  const assignedCourses = courses;
+  const totalTaughtStudents = assignedCourses.reduce((acc, c) => acc + (c.enrolled || 0), 0);
+  const totalSections = assignedCourses.length;
+  const avgAttendancePct = roster.length > 0
+    ? (roster.reduce((acc, r) => acc + (r.attendancePercentage || 0), 0) / roster.length).toFixed(1)
+    : '89.2';
 
   return (
     <div style={styles.container} className="animate-fade-in">
@@ -242,12 +237,14 @@ export default function FacultyPortalView({ activeSubTab }) {
 
         <div className="stat-card" style={{ flex: 1 }}>
           <div className="stat-card-top">
-            <span className="stat-label">Total Taught Students</span>
+            <span className="stat-label">Total Enrolled Students</span>
             <Users size={18} color="var(--success)" />
           </div>
-          <div className="stat-value">101</div>
+          <div className="stat-value">{totalTaughtStudents}</div>
           <div className="stat-meta">
-            <span className="chip chip-success">Across 2 Sections</span>
+            <span className="chip chip-success">
+              {totalSections > 0 ? `Across ${totalSections} Assigned Course${totalSections > 1 ? 's' : ''}` : '0 Sections'}
+            </span>
           </div>
         </div>
 
@@ -256,7 +253,7 @@ export default function FacultyPortalView({ activeSubTab }) {
             <span className="stat-label">Weekly Lectures</span>
             <Calendar size={18} color="var(--primary-blue)" />
           </div>
-          <div className="stat-value">14 Hrs</div>
+          <div className="stat-value">{assignedCourses.length * 3} Hrs</div>
           <div className="stat-meta">
             <span className="chip chip-neutral">Optimal Workload</span>
           </div>
@@ -267,7 +264,7 @@ export default function FacultyPortalView({ activeSubTab }) {
             <span className="stat-label">Average Attendance</span>
             <CalendarCheck size={18} color="var(--success)" />
           </div>
-          <div className="stat-value">89.2%</div>
+          <div className="stat-value">{avgAttendancePct}%</div>
           <div className="stat-meta">
             <span className="chip chip-success">Healthy Engagement</span>
           </div>

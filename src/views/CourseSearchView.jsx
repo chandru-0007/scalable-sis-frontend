@@ -26,7 +26,8 @@ export default function CourseSearchView() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [scope, setScope] = useState('courses'); // 'courses' | 'students' | 'faculty'
-  const [selectedSemester, setSelectedSemester] = useState('ALL');
+  const studentSem = user?.semester || 7;
+  const [selectedSemester, setSelectedSemester] = useState(String(studentSem));
   const [selectedDept, setSelectedDept] = useState('ALL');
 
   // Enrolled courses tracked from database
@@ -94,6 +95,14 @@ export default function CourseSearchView() {
   }, [searchQuery, courses]);
 
   function toggleCourseSelection(course) {
+    if (course.semester && course.semester < studentSem) {
+      addToast({
+        type: 'warning',
+        title: 'Academic Standing Restriction',
+        message: `Cannot enroll in ${course.code} (Semester ${course.semester}). As a Semester ${studentSem} student, course registration is limited to your current semester.`,
+      });
+      return;
+    }
     if (selectedCourses.some((c) => c.code === course.code)) {
       setSelectedCourses(selectedCourses.filter((c) => c.code !== course.code));
     } else {
@@ -390,6 +399,14 @@ export default function CourseSearchView() {
                             Drop
                           </button>
                         </div>
+                      ) : c.semester && c.semester < studentSem ? (
+                        <span
+                          className="chip chip-neutral"
+                          style={{ fontSize: '0.70rem', opacity: 0.75, cursor: 'not-allowed' }}
+                          title={`Locked: Semester ${studentSem} students cannot register for Semester ${c.semester} courses.`}
+                        >
+                          Prior Sem (Locked)
+                        </span>
                       ) : (
                         <button
                           onClick={() => toggleCourseSelection(c)}
