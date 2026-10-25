@@ -64,13 +64,6 @@ export default function FacultyPortalView({ activeSubTab }) {
   // Batch publish course results state
   const [publishingResults, setPublishingResults] = useState(false);
 
-  const [currentTab, setCurrentTab] = useState(activeSubTab || 'courses');
-
-  useEffect(() => {
-    if (activeSubTab) {
-      setCurrentTab(activeSubTab);
-    }
-  }, [activeSubTab]);
 
   useEffect(() => {
     loadFacultyData();
