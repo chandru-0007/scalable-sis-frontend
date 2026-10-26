@@ -27,15 +27,35 @@ export default function TimetableWeeklyView() {
   const days = ['Monday 19 Oct', 'Tuesday 20 Oct', 'Wednesday 21 Oct', 'Thursday 22 Oct', 'Friday 23 Oct'];
   const times = ['09:00 - 10:30', '10:30 - 12:00', '11:30 - 13:00', '14:00 - 15:30', '15:30 - 17:00'];
 
+  const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
   const studentId = user?.studentId || user?.id || user?.rollNumber;
+  const userKey = `${studentId || ''}_${user?.role || ''}_${user?.rollNumber || ''}`;
 
   useEffect(() => {
     async function loadTimetable() {
       setLoading(true);
       try {
-        if (studentId) {
+        if (isFaculty) {
+          const facultyId = user?.rollNumber || user?.facultyId || user?.id || 'FAC001';
+          const facultyName = user?.name || '';
+          const department = user?.department || 'CSE';
+          let res = null;
+          try {
+            res = await api.faculty.getTimetable({ facultyId, facultyName, department });
+          } catch (e) {
+            console.warn('Faculty timetable endpoint fallback:', e);
+          }
+          if (res && res.status === 'SUCCESS' && Array.isArray(res.timetable) && res.timetable.length > 0) {
+            setTimetableSlots(res.timetable);
+          } else {
+            const fallbackRes = await api.students.getTimetable(facultyId);
+            if (fallbackRes && fallbackRes.status === 'SUCCESS' && Array.isArray(fallbackRes.timetable)) {
+              setTimetableSlots(fallbackRes.timetable);
+            }
+          }
+        } else if (studentId) {
           const res = await api.students.getTimetable(studentId);
-          if (res.status === 'SUCCESS' && Array.isArray(res.timetable)) {
+          if (res && res.status === 'SUCCESS' && Array.isArray(res.timetable)) {
             setTimetableSlots(res.timetable);
           }
         }
@@ -46,7 +66,7 @@ export default function TimetableWeeklyView() {
       }
     }
     loadTimetable();
-  }, [studentId]);
+  }, [userKey]);
 
   // Dynamically build schedule matrix from real enrolled courses
   const scheduleMatrix = {
@@ -60,64 +80,69 @@ export default function TimetableWeeklyView() {
   const detectedCollisions = [];
 
   timetableSlots.forEach((slot) => {
-    const rawDay = (slot.dayOfWeek || slot.day || 'Mon').trim().toLowerCase();
-    const matchedDay = days.find((d) => d.toLowerCase().startsWith(rawDay.slice(0, 3))) || 'Monday 19 Oct';
-    
-    // Normalize or match slot time
-    let matchedTime = times[0];
-    const rawTime = (slot.timeSlot || slot.time || '09:00 - 10:30').trim();
-    const cleanTime = rawTime.replace(/\s+/g, '');
-    const foundTime = times.find((t) => t.replace(/\s+/g, '') === cleanTime);
-    if (foundTime) {
-      matchedTime = foundTime;
-    } else if (cleanTime.includes('09:00')) matchedTime = '09:00 - 10:30';
-    else if (cleanTime.includes('10:30')) matchedTime = '10:30 - 12:00';
-    else if (cleanTime.includes('11:00') || cleanTime.includes('11:30')) matchedTime = '11:30 - 13:00';
-    else if (cleanTime.includes('14:00')) matchedTime = '14:00 - 15:30';
-    else if (cleanTime.includes('15:30')) matchedTime = '15:30 - 17:00';
+    const dayStr = slot.dayOfWeek || slot.day || 'Mon';
+    const subDays = dayStr.includes('/') ? dayStr.split('/') : [dayStr];
 
-    const isLab = (slot.courseTitle || '').toLowerCase().includes('lab');
-    const sessionObj = {
-      code: slot.courseCode,
-      title: slot.courseTitle,
-      room: slot.room || 'Room TBA',
-      faculty: slot.instructor || 'Faculty Mentor',
-      type: isLab ? 'lab' : 'lecture',
-      color: isLab ? '#F5F3FF' : '#ECFDF5',
-      border: isLab ? '#DDD6FE' : '#A7F3D0',
-    };
+    subDays.forEach((sd) => {
+      const rawDay = sd.trim().toLowerCase();
+      const matchedDay = days.find((d) => d.toLowerCase().startsWith(rawDay.slice(0, 3))) || 'Monday 19 Oct';
+      
+      // Normalize or match slot time
+      let matchedTime = times[0];
+      const rawTime = (slot.timeSlot || slot.time || '09:00 - 10:30').trim();
+      const cleanTime = rawTime.replace(/\s+/g, '');
+      const foundTime = times.find((t) => t.replace(/\s+/g, '') === cleanTime);
+      if (foundTime) {
+        matchedTime = foundTime;
+      } else if (cleanTime.includes('09:00')) matchedTime = '09:00 - 10:30';
+      else if (cleanTime.includes('10:00') || cleanTime.includes('10:30')) matchedTime = '10:30 - 12:00';
+      else if (cleanTime.includes('11:00') || cleanTime.includes('11:30') || cleanTime.includes('12:00')) matchedTime = '11:30 - 13:00';
+      else if (cleanTime.includes('14:00') || cleanTime.includes('02:00') || cleanTime.includes('2:00')) matchedTime = '14:00 - 15:30';
+      else if (cleanTime.includes('15:30') || cleanTime.includes('03:30') || cleanTime.includes('3:30') || cleanTime.includes('16:00') || cleanTime.includes('17:00')) matchedTime = '15:30 - 17:00';
 
-    if (scheduleMatrix[matchedDay][matchedTime]) {
-      const existing = scheduleMatrix[matchedDay][matchedTime];
-      if (Array.isArray(existing)) {
-        sessionObj.collision = true;
-        sessionObj.color = '#FEF3C7';
-        sessionObj.border = '#FCD34D';
-        existing.push(sessionObj);
-        detectedCollisions.push({
-          day: matchedDay,
-          time: matchedTime,
-          course1: existing[0].code,
-          course2: sessionObj.code,
-        });
+      const isLab = (slot.courseTitle || '').toLowerCase().includes('lab');
+      const sessionObj = {
+        code: slot.courseCode,
+        title: slot.courseTitle,
+        room: slot.room || 'Room TBA',
+        faculty: isFaculty ? (slot.room || 'Lecture Hall') : (slot.instructor || 'Faculty Mentor'),
+        type: isLab ? 'lab' : 'lecture',
+        color: isLab ? '#F5F3FF' : '#ECFDF5',
+        border: isLab ? '#DDD6FE' : '#A7F3D0',
+      };
+
+      if (scheduleMatrix[matchedDay][matchedTime]) {
+        const existing = scheduleMatrix[matchedDay][matchedTime];
+        if (Array.isArray(existing)) {
+          sessionObj.collision = true;
+          sessionObj.color = '#FEF3C7';
+          sessionObj.border = '#FCD34D';
+          existing.push(sessionObj);
+          detectedCollisions.push({
+            day: matchedDay,
+            time: matchedTime,
+            course1: existing[0].code,
+            course2: sessionObj.code,
+          });
+        } else {
+          existing.collision = true;
+          existing.color = '#FEF3C7';
+          existing.border = '#FCD34D';
+          sessionObj.collision = true;
+          sessionObj.color = '#FEF3C7';
+          sessionObj.border = '#FCD34D';
+          scheduleMatrix[matchedDay][matchedTime] = [existing, sessionObj];
+          detectedCollisions.push({
+            day: matchedDay,
+            time: matchedTime,
+            course1: existing.code,
+            course2: sessionObj.code,
+          });
+        }
       } else {
-        existing.collision = true;
-        existing.color = '#FEF3C7';
-        existing.border = '#FCD34D';
-        sessionObj.collision = true;
-        sessionObj.color = '#FEF3C7';
-        sessionObj.border = '#FCD34D';
-        scheduleMatrix[matchedDay][matchedTime] = [existing, sessionObj];
-        detectedCollisions.push({
-          day: matchedDay,
-          time: matchedTime,
-          course1: existing.code,
-          course2: sessionObj.code,
-        });
+        scheduleMatrix[matchedDay][matchedTime] = sessionObj;
       }
-    } else {
-      scheduleMatrix[matchedDay][matchedTime] = sessionObj;
-    }
+    });
   });
 
   // Flattened sessions for list view
@@ -150,9 +175,11 @@ export default function TimetableWeeklyView() {
       {/* Header */}
       <div style={styles.header}>
         <div>
-          <h2 style={styles.title}>Weekly Class Timetable</h2>
+          <h2 style={styles.title}>{isFaculty ? 'Faculty Weekly Teaching Schedule' : 'Weekly Class Timetable'}</h2>
           <p style={styles.subtitle}>
-            Week of 19 &ndash; 23 October 2026 &bull; Automatic Timetable Invalidation on Course Reschedule
+            {isFaculty
+              ? `Department of ${user?.department || 'Computer Science & Engineering'} • Verified Course Lectures & Labs`
+              : 'Week of 19 – 23 October 2026 • Automatic Timetable Invalidation on Course Reschedule'}
           </p>
         </div>
 
@@ -195,7 +222,7 @@ export default function TimetableWeeklyView() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <CalendarCheck size={16} color="#059669" style={{ flexShrink: 0 }} />
             <span>
-              <strong>Dynamic Live Schedule:</strong> Displaying {timetableSlots.length} confirmed lecture &amp; laboratory sessions from your enrolled courses.
+              <strong>{isFaculty ? 'Confirmed Teaching Schedule:' : 'Dynamic Live Schedule:'}</strong> Displaying {timetableSlots.length} confirmed lecture &amp; laboratory sessions {isFaculty ? 'across your assigned teaching courses.' : 'from your enrolled courses.'}
             </span>
           </div>
           <span className="chip chip-success">Synced with Redis</span>
@@ -206,13 +233,15 @@ export default function TimetableWeeklyView() {
       {timetableSlots.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 20px', backgroundColor: 'var(--card-bg, #FFFFFF)', borderRadius: '18px', border: '1px solid var(--border-color, #E2E8F0)', margin: '16px 0 24px' }}>
           <CalendarDays size={38} color="var(--primary-blue)" style={{ opacity: 0.45, marginBottom: '12px' }} />
-          <h3 style={{ fontSize: '1.15rem', fontWeight: '700', margin: '0 0 6px' }}>Your Timetable is Empty (0 Enrolled Courses)</h3>
+          <h3 style={{ fontSize: '1.15rem', fontWeight: '700', margin: '0 0 6px' }}>{isFaculty ? 'No Teaching Sessions Assigned (0 Courses)' : 'Your Timetable is Empty (0 Enrolled Courses)'}</h3>
           <p style={{ color: '#64748B', fontSize: '0.86rem', maxWidth: '480px', margin: '0 auto 16px' }}>
-            You have not registered for any courses yet. Select courses in the Course Catalog to generate your scheduled lecture and laboratory timetable slots.
+            {isFaculty
+              ? 'You currently do not have any active course sessions assigned to your faculty profile. Check Teaching Courses or contact the Registrar.'
+              : 'You have not registered for any courses yet. Select courses in the Course Catalog to generate your scheduled lecture and laboratory timetable slots.'}
           </p>
-          <a href="#registration" className="btn btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+          <a href={isFaculty ? '#faculty' : '#registration'} className="btn btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
             <BookOpen size={15} />
-            <span>Browse &amp; Enroll Courses</span>
+            <span>{isFaculty ? 'View Teaching Courses' : 'Browse & Enroll Courses'}</span>
           </a>
         </div>
       )}

@@ -124,6 +124,10 @@ export const api = {
       const q = new URLSearchParams(params).toString();
       return request(`/api/faculty/courses${q ? `?${q}` : ''}`);
     },
+    getTimetable: (params = {}) => {
+      const q = typeof params === 'string' ? `facultyId=${encodeURIComponent(params)}` : new URLSearchParams(params).toString();
+      return request(`/api/faculty/timetable${q ? `?${q}` : ''}`);
+    },
     getRoster: (courseCode) => request(`/api/faculty/courses/${courseCode}/roster`),
     markAttendance: (courseCode, attendanceList) => request(`/api/faculty/courses/${courseCode}/attendance`, {
       method: 'POST',

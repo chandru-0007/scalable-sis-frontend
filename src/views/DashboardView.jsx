@@ -24,14 +24,20 @@ export default function DashboardView({ onNavigate }) {
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
   const studentId = user?.studentId || user?.id || user?.rollNumber;
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
+        const facultyId = user?.rollNumber || user?.facultyId || user?.id || 'FAC001';
+        const timetablePromise = isFaculty
+          ? api.faculty.getTimetable({ facultyId, facultyName: user?.name, department: user?.department }).catch(() => api.students.getTimetable(facultyId))
+          : (studentId ? api.students.getTimetable(studentId) : Promise.resolve({ timetable: [] }));
+
         const [enrollRes, timetableRes, noticeRes] = await Promise.allSettled([
           studentId ? api.students.getEnrollments(studentId) : Promise.resolve({ enrollments: [] }),
-          studentId ? api.students.getTimetable(studentId) : Promise.resolve({ timetable: [] }),
+          timetablePromise,
           api.notices.getAll(),
         ]);
 
