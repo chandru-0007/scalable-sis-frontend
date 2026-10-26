@@ -82,6 +82,29 @@ export default function DashboardView({ onNavigate }) {
 
   const cgpaStr = gradedCount > 0 ? (totalGradePoints / gradedCount).toFixed(2) : (enrollments.length > 0 ? 'In Progress' : 'N/A');
 
+  // Compute today's timetable sessions
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayDayName = dayNames[new Date().getDay()];
+  const isWeekend = todayDayName === 'Sunday' || todayDayName === 'Saturday';
+
+  const normalizeDay = (d) => {
+    if (!d) return '';
+    const s = String(d).trim().toLowerCase();
+    if (s.startsWith('mon')) return 'Monday';
+    if (s.startsWith('tue')) return 'Tuesday';
+    if (s.startsWith('wed')) return 'Wednesday';
+    if (s.startsWith('thu')) return 'Thursday';
+    if (s.startsWith('fri')) return 'Friday';
+    if (s.startsWith('sat')) return 'Saturday';
+    if (s.startsWith('sun')) return 'Sunday';
+    return d;
+  };
+
+  const todaySessions = timetable.filter((item) => {
+    const day = normalizeDay(item.dayOfWeek || item.day);
+    return day === todayDayName;
+  });
+
   return (
     <div style={styles.container} className="animate-fade-in">
       {/* ─── 1. Stats Row ─── */}
@@ -157,7 +180,11 @@ export default function DashboardView({ onNavigate }) {
               <div>
                 <h3>Today's Timetable</h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  {timetable.length > 0 ? `${timetable.length} Active Sessions` : '0 Active Sessions'}
+                  {todaySessions.length > 0
+                    ? `${todaySessions.length} Active Session${todaySessions.length === 1 ? '' : 's'} (${todayDayName})`
+                    : isWeekend
+                    ? `Weekend – No Classes (${todayDayName})`
+                    : `0 Sessions Scheduled (${todayDayName})`}
                 </span>
               </div>
               <button
@@ -170,12 +197,12 @@ export default function DashboardView({ onNavigate }) {
             </div>
             <div className="sis-card-body" style={{ padding: '16px 20px' }}>
               <div style={styles.timetableList}>
-                {timetable.length > 0 ? (
-                  timetable.slice(0, 3).map((item, idx) => (
+                {todaySessions.length > 0 ? (
+                  todaySessions.map((item, idx) => (
                     <div key={idx} style={styles.timetableItem}>
                       <div style={styles.timeBadge}>
                         <Clock size={13} color="#10B981" />
-                        <span>{item.time || '09:00 - 10:00'}</span>
+                        <span>{item.timeSlot || item.time || '09:00 - 10:30'}</span>
                       </div>
                       <div style={styles.sessionDetails}>
                         <div style={styles.courseHeader}>
@@ -199,20 +226,30 @@ export default function DashboardView({ onNavigate }) {
                   <div style={{ textAlign: 'center', padding: '24px 16px', color: '#64748B' }}>
                     <Clock size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
                     <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
-                      No Classes Scheduled Today
+                      {isWeekend ? `Weekend (${todayDayName}) – No Classes Today` : `No Classes Scheduled for ${todayDayName}`}
                     </div>
                     <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>
                       {enrollments.length === 0
                         ? 'You are not enrolled in any courses yet. Select courses to build your timetable.'
+                        : isWeekend
+                        ? 'Classes run Monday through Friday. Explore your weekly schedule or review assignments.'
                         : 'No active lecture or laboratory slots scheduled for today.'}
                     </div>
-                    {enrollments.length === 0 && (
+                    {enrollments.length === 0 ? (
                       <button
                         onClick={() => onNavigate && onNavigate('registration')}
                         className="btn btn-outline btn-sm"
                         style={{ marginTop: '12px' }}
                       >
                         Select Courses to Enroll
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onNavigate && onNavigate('timetable')}
+                        className="btn btn-outline btn-sm"
+                        style={{ marginTop: '12px' }}
+                      >
+                        View Weekly Timetable
                       </button>
                     )}
                   </div>

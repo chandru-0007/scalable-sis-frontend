@@ -118,6 +118,10 @@ export const api = {
 
   // ─── Faculty Portal ───
   faculty: {
+    getTimetable: (params = {}) => {
+      const q = new URLSearchParams(params).toString();
+      return request(`/api/faculty/timetable${q ? `?${q}` : ''}`);
+    },
     getCourses: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return request(`/api/faculty/courses${q ? `?${q}` : ''}`);
