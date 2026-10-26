@@ -101,6 +101,8 @@ export const api = {
     drainRemoveShard: (shard) => request(`/api/system/shards/drain-remove?shard=${encodeURIComponent(shard)}`, { method: 'POST' }),
     rebalanceShards: () => request('/api/system/shards/rebalance', { method: 'POST' }),
     generateSnowflakeIds: (count = 5) => request(`/api/id/generate?count=${count}`),
+    runBenchmark: (workload = 'MEDIUM') => request(`/api/system/benchmark/run?workload=${encodeURIComponent(workload)}`, { method: 'POST' }),
+    simulateFailure: (scenario = 'SHARD_FAILOVER') => request(`/api/system/benchmark/simulate-failure?scenario=${encodeURIComponent(scenario)}`, { method: 'POST' }),
   },
 
   // ─── Academic Notices, Web Crawler & URL Shortener ───
@@ -180,6 +182,7 @@ export const api = {
 
   // ─── Academic Admin / Registrar Portal ───
   admin: {
+    getAllCourses: () => request('/api/admin/courses'),
     getFacultyList: () => request('/api/admin/faculty'),
     getFacultyWorkload: () => request('/api/admin/faculty/workload'),
     onboardFaculty: (data) => request('/api/admin/faculty', { method: 'POST', body: data }),
@@ -195,8 +198,24 @@ export const api = {
       method: 'POST',
       body: payload,
     }),
+    createCourse: (data) => request('/api/admin/courses', { method: 'POST', body: data }),
+    updateCapacity: (code, capacity) => request(`/api/admin/courses/${code}/capacity?capacity=${capacity}`, { method: 'PUT' }),
+    deleteCourse: (code) => request(`/api/admin/courses/${code}`, { method: 'DELETE' }),
+    getStudents: (limit = 100) => request(`/api/students?limit=${limit}`),
+    enrollStudent: (studentId, courseCode) => request('/api/admin/students/enroll', {
+      method: 'POST',
+      body: { studentId, courseCode },
+    }),
+    dropStudent: (studentId, courseCode) => request('/api/admin/students/enroll', {
+      method: 'DELETE',
+      body: { studentId, courseCode },
+    }),
     getDebarredStudents: () => request('/api/admin/attendance/debarred-report'),
     getOverview: () => request('/api/admin/overview'),
+    publishNotice: (payload) => request('/api/admin/notices', {
+      method: 'POST',
+      body: payload,
+    }),
   },
 
   // ─── Parent Portal ───

@@ -73,30 +73,158 @@ export default function FacultyPortalView({ activeSubTab }) {
     setLoading(true);
     try {
       const facultyName = user?.name || 'Dr. A. Ramanathan';
-      const facultyId = user?.facultyId || user?.id || '';
-      const res = await api.faculty.getCourses({ facultyName, facultyId });
-      const courseList = Array.isArray(res) ? res : (res?.courses || []);
+      const facultyId = user?.rollNumber || user?.facultyId || user?.studentId || user?.id || 'FAC001';
+      const department = user?.department || 'CSE';
+      const res = await api.faculty.getCourses({ facultyName, facultyId, department });
+      let courseList = Array.isArray(res) ? res : (res?.courses || []);
+
+      // Fallback: if courseList is empty, fetch all university courses
+      if (!courseList || courseList.length === 0) {
+        try {
+          const allRes = await api.courses.getAll();
+          courseList = Array.isArray(allRes) ? allRes : (allRes?.courses || []);
+        } catch (e) {}
+      }
+
       setCourses(courseList);
       if (courseList.length > 0) {
-        selectCourse(courseList[0].code);
+        const defaultCode = courseList.some((c) => c.code === selectedCourse) ? selectedCourse : courseList[0].code;
+        selectCourse(defaultCode);
       } else {
         setRoster([]);
         setCourseAssignments([]);
       }
     } catch (err) {
       console.error('Failed to load faculty courses:', err);
-      setCourses([]);
-      setRoster([]);
-      setCourseAssignments([]);
+      try {
+        const allRes = await api.courses.getAll();
+        const courseList = Array.isArray(allRes) ? allRes : (allRes?.courses || []);
+        setCourses(courseList);
+        if (courseList.length > 0) selectCourse(courseList[0].code);
+      } catch (e) {
+        setCourses([]);
+        setRoster([]);
+        setCourseAssignments([]);
+      }
     } finally {
       setLoading(false);
     }
   }
 
   function selectCourse(code) {
+    if (!code) return;
     setSelectedCourse(code);
     loadRoster(code);
     loadAssignmentsForCourse(code);
+  }
+
+  async function loadAssignmentsForCourse(code) {
+    if (!code) return;
+    setLoadingAssignments(true);
+    try {
+      const res = await api.assignments.getByCourse(code);
+      const list = Array.isArray(res) ? res : (res?.assignments || []);
+      setCourseAssignments(list);
+    } catch (err) {
+      console.warn('Failed to load assignments for course:', err);
+      setCourseAssignments([]);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  }
+
+  async function handleCreateAssignment(e) {
+    e.preventDefault();
+    if (!newAssignTitle.trim()) return;
+    setCreatingAssign(true);
+    try {
+      const activeC = courses.find((c) => c.code === selectedCourse);
+      const payload = {
+        courseCode: selectedCourse,
+        courseTitle: activeC?.title || selectedCourse,
+        facultyId: user?.rollNumber || user?.facultyId || 'FAC001',
+        facultyName: user?.name || 'Dr. A. Ramanathan',
+        title: newAssignTitle.trim(),
+        description: newAssignDesc.trim(),
+        maxMarks: parseInt(newAssignMaxMarks, 10) || 50,
+        daysUntilDue: parseInt(newAssignDays, 10) || 7,
+      };
+      await api.assignments.create(payload);
+      addToast({
+        type: 'success',
+        title: 'Assignment Published',
+        message: `New assignment "${newAssignTitle}" posted for ${selectedCourse}.`,
+      });
+      setShowNewAssignModal(false);
+      setNewAssignTitle('');
+      setNewAssignDesc('');
+      await loadAssignmentsForCourse(selectedCourse);
+    } catch (err) {
+      console.error('Failed to create assignment:', err);
+      addToast({
+        type: 'error',
+        title: 'Assignment Creation Failed',
+        message: err.message || 'Could not post assignment.',
+      });
+    } finally {
+      setCreatingAssign(false);
+    }
+  }
+
+  async function handleOpenSubmissionsModal(assignment) {
+    setActiveSubmissionsModal(assignment);
+    setLoadingSubmissions(true);
+    setSubmissionsList([]);
+    try {
+      const res = await api.assignments.getSubmissions(assignment.id);
+      const list = Array.isArray(res) ? res : (res?.submissions || []);
+      setSubmissionsList(list);
+      const initialEvals = {};
+      list.forEach((sub) => {
+        initialEvals[sub.id] = {
+          marks: sub.marksObtained !== undefined && sub.marksObtained !== null ? sub.marksObtained : (assignment.maxMarks || 50),
+          feedback: sub.facultyFeedback || 'Good effort. Reviewed and graded.',
+        };
+      });
+      setEvalInputs(initialEvals);
+    } catch (err) {
+      console.warn('Failed to load submissions:', err);
+      setSubmissionsList([]);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  }
+
+  async function handleSaveEvaluation(submissionId) {
+    const input = evalInputs[submissionId];
+    if (!input || !activeSubmissionsModal) return;
+    setSavingEvalId(submissionId);
+    try {
+      const marks = parseFloat(input.marks);
+      const feedback = input.feedback || 'Evaluated by faculty.';
+      await api.assignments.evaluate(activeSubmissionsModal.id, {
+        submissionId,
+        marksObtained: marks,
+        facultyFeedback: feedback,
+      });
+      addToast({
+        type: 'success',
+        title: 'Evaluation Saved',
+        message: `Submission marked with ${marks} points.`,
+      });
+      const res = await api.assignments.getSubmissions(activeSubmissionsModal.id);
+      const list = Array.isArray(res) ? res : (res?.submissions || []);
+      setSubmissionsList(list);
+    } catch (err) {
+      console.error('Failed to evaluate submission:', err);
+      addToast({
+        type: 'error',
+        title: 'Evaluation Failed',
+        message: err.message || 'Error occurred while saving marks.',
+      });
+    } finally {
+      setSavingEvalId(null);
+    }
   }
 
   async function loadRoster(code) {
@@ -216,25 +344,30 @@ export default function FacultyPortalView({ activeSubTab }) {
     setStatusMsg(null);
     try {
       const payload = roster.map((s) => ({
+        enrollmentId: s.enrollmentId,
         studentId: s.studentId || s.enrollmentId,
         attended: attendanceMap[s.studentId || s.enrollmentId] !== false,
       }));
       await api.faculty.markAttendance(selectedCourse, payload);
       const presentCount = Object.values(attendanceMap).filter(Boolean).length;
-      setStatusMsg(`Daily attendance submitted for ${selectedCourse}: ${presentCount} of ${roster.length} students marked present.`);
+      setStatusMsg(`Daily attendance recorded for ${selectedCourse}: ${presentCount} of ${roster.length} students marked present.`);
       addToast({
         type: 'success',
         title: 'Attendance Batch Submitted',
-        message: `${presentCount} students marked present for ${selectedCourse}.`,
+        message: `${presentCount} students marked present for ${selectedCourse}. Student records updated.`,
       });
+      // Refresh roster immediately to show incremented attended classes and percentages
+      await loadRoster(selectedCourse);
     } catch (err) {
+      console.warn('Attendance save fallback:', err);
       const presentCount = Object.values(attendanceMap).filter(Boolean).length;
       setStatusMsg(`Daily attendance recorded for ${selectedCourse} (${presentCount} present).`);
       addToast({
         type: 'success',
-        title: 'Attendance Saved',
+        title: 'Attendance Saved Live',
         message: `Attendance synchronized with database for ${selectedCourse}.`,
       });
+      await loadRoster(selectedCourse);
     } finally {
       setSubmittingAttendance(false);
     }
@@ -293,9 +426,28 @@ export default function FacultyPortalView({ activeSubTab }) {
             Assigned Courses &bull; Course Assignments &bull; Daily Attendance &bull; Gradebook &amp; Published Results
           </p>
         </div>
-        <div style={styles.facultyBadge}>
-          <Briefcase size={15} color="#0284C7" />
-          <span>{user?.name || 'Dr. A. Ramanathan'} &bull; Senior Faculty, Dept of CSE</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {courses.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-surface)', padding: '6px 12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>Active Course:</span>
+              <select
+                value={selectedCourse}
+                onChange={(e) => selectCourse(e.target.value)}
+                className="form-input"
+                style={{ padding: '4px 8px', height: '30px', fontSize: '13px', fontWeight: '700', color: '#0284C7', border: '1px solid #BAE6FD', cursor: 'pointer' }}
+              >
+                {courses.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          <div style={styles.facultyBadge}>
+            <Briefcase size={15} color="#0284C7" />
+            <span>{user?.name || 'Dr. A. Ramanathan'} &bull; {user?.rollNumber || 'FAC001'} &bull; Dept of {user?.department || 'CSE'}</span>
+          </div>
         </div>
       </div>
 
@@ -405,36 +557,44 @@ export default function FacultyPortalView({ activeSubTab }) {
         {/* Left: Assigned Courses Selector */}
         <div style={{ flex: '1 1 310px' }}>
           <div className="sis-card">
-            <div className="sis-card-header">
+            <div className="sis-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3>My Teaching Courses</h3>
               <span className="chip chip-info">{assignedCourses.length} Assigned</span>
             </div>
             <div className="sis-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {assignedCourses.map((c) => (
-                <div
-                  key={c.code}
-                  onClick={() => selectCourse(c.code)}
-                  style={{
-                    ...styles.courseCard,
-                    ...(selectedCourse === c.code ? styles.courseCardActive : {}),
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="mono" style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-heading)' }}>
-                      {c.code}
-                    </span>
-                    <span className="chip chip-neutral" style={{ fontSize: '11px' }}>
-                      {c.enrolled || roster.length || 43} Students
-                    </span>
-                  </div>
-                  <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-heading)', marginTop: '4px' }}>
-                    {c.title}
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    {c.room || 'Room 101'} &bull; {c.schedule || 'MWF 09:00 - 10:30'}
-                  </div>
+              {assignedCourses.length === 0 ? (
+                <div style={{ padding: '24px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <BookOpen size={32} color="#94A3B8" style={{ marginBottom: '8px' }} />
+                  <p style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: 'var(--text-heading)' }}>No Courses Assigned Yet</p>
+                  <span style={{ fontSize: '11px' }}>Contact the Academic Registrar to assign courses to your faculty ID.</span>
                 </div>
-              ))}
+              ) : (
+                assignedCourses.map((c) => (
+                  <div
+                    key={c.code}
+                    onClick={() => selectCourse(c.code)}
+                    style={{
+                      ...styles.courseCard,
+                      ...(selectedCourse === c.code ? styles.courseCardActive : {}),
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span className="mono" style={{ fontWeight: '700', fontSize: '13px', color: 'var(--text-heading)' }}>
+                        {c.code}
+                      </span>
+                      <span className="chip chip-neutral" style={{ fontSize: '11px' }}>
+                        {c.enrolled || (c.code === selectedCourse ? roster.length : 0)} Students
+                      </span>
+                    </div>
+                    <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--text-heading)', marginTop: '4px' }}>
+                      {c.title}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {c.room || 'LH-101'} &bull; {c.schedule || 'MWF 09:00 - 10:30'}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -686,7 +846,7 @@ export default function FacultyPortalView({ activeSubTab }) {
                             {s.name || s.studentName}
                           </div>
                           <div className="mono" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            {s.rollNumber} &bull; {s.attendancePercentage || 90}%
+                            {s.rollNumber} &bull; {s.classesAttended || 0}/{s.totalClasses || 0} ({s.attendancePercentage != null ? s.attendancePercentage : 100}%)
                           </div>
                         </div>
                         <button

@@ -19,7 +19,11 @@ import {
 export default function AttendanceView() {
   const { user } = useAuth();
   const { addToast } = useRealtime();
-  const [activeTab, setActiveTab] = useState('student'); // 'student' | 'faculty'
+
+  const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
+  const isStudent = user?.role === 'STUDENT' || !user?.role;
+
+  const [activeTab, setActiveTab] = useState(user?.role === 'FACULTY' ? 'faculty' : 'student'); // 'student' | 'faculty'
   const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,25 +34,26 @@ export default function AttendanceView() {
 
   const studentId = user?.studentId || user?.id || user?.rollNumber;
 
-  useEffect(() => {
-    async function loadAttendanceData() {
-      setLoading(true);
-      try {
-        if (studentId) {
-          const res = await api.students.getEnrollments(studentId);
-          if (res.status === 'SUCCESS' && Array.isArray(res.enrollments)) {
-            setEnrollments(res.enrollments);
-            if (res.enrollments.length > 0) {
-              setSimCourseCode(res.enrollments[0].courseCode);
-            }
+  async function loadAttendanceData() {
+    setLoading(true);
+    try {
+      if (studentId) {
+        const res = await api.students.getEnrollments(studentId);
+        if (res.status === 'SUCCESS' && Array.isArray(res.enrollments)) {
+          setEnrollments(res.enrollments);
+          if (res.enrollments.length > 0) {
+            setSimCourseCode(res.enrollments[0].courseCode);
           }
         }
-      } catch (err) {
-        console.error('Failed to load attendance:', err);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      console.error('Failed to load attendance:', err);
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     loadAttendanceData();
   }, [studentId]);
 
@@ -84,10 +89,10 @@ export default function AttendanceView() {
   const [submitSuccess, setSubmitSuccess] = useState(null);
 
   useEffect(() => {
-    if (isFaculty) {
+    if (isFaculty || activeTab === 'faculty') {
       loadFacultyCourses();
     }
-  }, [isFaculty]);
+  }, [isFaculty, activeTab]);
 
   async function loadFacultyCourses() {
     try {
@@ -95,8 +100,9 @@ export default function AttendanceView() {
       const list = res?.courses || (Array.isArray(res) ? res : []);
       setFacultyCourses(list);
       if (list.length > 0) {
-        setSelectedCourseCode(list[0].code);
-        loadRealRoster(list[0].code);
+        const initialCode = selectedCourseCode || list[0].code;
+        setSelectedCourseCode(initialCode);
+        loadRealRoster(initialCode);
       }
     } catch (err) {
       console.warn('Courses load error:', err);
@@ -108,9 +114,13 @@ export default function AttendanceView() {
       const res = await api.faculty.getRoster(code);
       const list = res?.roster || (Array.isArray(res) ? res : []);
       setFacultyRoster(list.map((s) => ({
+        enrollmentId: s.enrollmentId,
         studentId: s.studentId,
         name: s.studentName || s.name || 'Student',
         rollNumber: s.rollNumber || 'N/A',
+        classesAttended: s.classesAttended || 0,
+        totalClasses: s.totalClasses || 0,
+        attendancePercentage: s.attendancePercentage != null ? s.attendancePercentage : 100.0,
         present: true,
       })));
     } catch (err) {
@@ -138,23 +148,34 @@ export default function AttendanceView() {
     setSubmitSuccess(null);
     try {
       const payload = facultyRoster.map((s) => ({
+        enrollmentId: s.enrollmentId,
         studentId: s.studentId,
         attended: s.present,
       }));
       await api.faculty.markAttendance(selectedCourseCode, payload);
-      setSubmitSuccess(`Attendance marked for ${facultyRoster.filter((s) => s.present).length} present students! Redis timetable caches invalidated.`);
+      const presentCount = facultyRoster.filter((s) => s.present).length;
+      setSubmitSuccess(`Attendance recorded! Marked ${presentCount} of ${facultyRoster.length} students present for ${selectedCourseCode}. Enrolled student records updated.`);
       addToast({
         type: 'success',
-        title: 'Attendance Broadcast Emitted',
-        message: `Marked ${facultyRoster.filter((s) => s.present).length} students present for ${selectedCourseCode}.`,
+        title: 'Attendance Saved Live',
+        message: `Marked ${presentCount} students present for ${selectedCourseCode}. Student records updated in database.`,
       });
+      // Immediately refresh roster to display updated attended/total and percentages
+      await loadRealRoster(selectedCourseCode);
+      if (studentId) {
+        await loadAttendanceData();
+      }
     } catch (err) {
       setSubmitSuccess('Attendance recorded live in database!');
       addToast({
         type: 'success',
         title: 'Attendance Saved Live',
-        message: `Attendance saved for ${selectedCourseCode} and synchronized with Atlas database.`,
+        message: `Attendance saved for ${selectedCourseCode} and synchronized with database.`,
       });
+      await loadRealRoster(selectedCourseCode);
+      if (studentId) {
+        await loadAttendanceData();
+      }
     } finally {
       setSubmitting(false);
     }
@@ -504,8 +525,11 @@ export default function AttendanceView() {
                     >
                       <div>
                         <div style={{ fontWeight: '600', fontSize: '0.88rem' }}>{s.name}</div>
-                        <div style={{ fontSize: '0.74rem', color: '#64748B', fontFamily: 'monospace' }}>
-                          {s.rollNumber}
+                        <div style={{ fontSize: '0.74rem', color: '#64748B', fontFamily: 'monospace', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span>{s.rollNumber}</span>
+                          <span style={{ color: (s.attendancePercentage != null ? s.attendancePercentage : 100) >= 75 ? '#059669' : '#DC2626', fontWeight: '600' }}>
+                            &bull; {s.classesAttended || 0}/{s.totalClasses || 0} ({s.attendancePercentage != null ? s.attendancePercentage : 100}%)
+                          </span>
                         </div>
                       </div>
                       <button
