@@ -10,9 +10,10 @@ import {
   ChevronDown,
   Sun,
   Moon,
+  Menu,
 } from 'lucide-react';
 
-export default function Topbar() {
+export default function Topbar({ onToggleMobileMenu }) {
   const { user, switchDemoRole } = useAuth();
   const { isConnected, telemetry, unreadNoticeCount, markNoticesRead } = useRealtime();
   const { theme, toggleTheme, isDark } = useTheme();
@@ -47,13 +48,24 @@ export default function Topbar() {
   };
 
   return (
-    <header style={styles.topbar}>
-      {/* Left: Greeting & Date */}
-      <div>
-        <h2 style={styles.greeting}>
-          Good morning, {formatGreetingName()}
-        </h2>
-        <div style={styles.dateText}>{todayStr}</div>
+    <header className="topbar-header" style={styles.topbar}>
+      {/* Left: Hamburger Button (on mobile) + Greeting & Date */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <button
+          type="button"
+          className="topbar-hamburger-btn"
+          onClick={onToggleMobileMenu}
+          title="Open Menu"
+          aria-label="Open Navigation Menu"
+        >
+          <Menu size={20} />
+        </button>
+        <div style={{ minWidth: 0 }}>
+          <h2 className="topbar-greeting" style={styles.greeting}>
+            Good morning, {formatGreetingName()}
+          </h2>
+          <div className="topbar-date-text" style={styles.dateText}>{todayStr}</div>
+        </div>
       </div>
 
       {/* Right: Telemetry + Cloud Status Pills + Theme Toggle + Role Switcher */}
@@ -84,16 +96,19 @@ export default function Topbar() {
           </span>
         </div>
 
-        {/* MongoDB Atlas Shard Pill */}
-        <div style={styles.pillAtlas} title="Connected to MongoDB Atlas Cloud Cluster with 3 Shards">
-          <Database size={13} color="var(--primary-blue)" />
-          <span>Atlas Sharded</span>
-        </div>
+        {/* MongoDB Atlas and Upstash Redis Cloud Pills (wrapped for responsive auto-collapse) */}
+        <div className="telemetry-cloud-pills" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* MongoDB Atlas Shard Pill */}
+          <div style={styles.pillAtlas} title="Connected to MongoDB Atlas Cloud Cluster with 3 Shards">
+            <Database size={13} color="var(--primary-blue)" />
+            <span>Atlas Sharded</span>
+          </div>
 
-        {/* Upstash Redis Cloud Pill */}
-        <div style={styles.pillRedis} title="Connected to Upstash Cloud Redis over TLS">
-          <Radio size={13} color="#9333EA" />
-          <span>Upstash TLS</span>
+          {/* Upstash Redis Cloud Pill */}
+          <div style={styles.pillRedis} title="Connected to Upstash Cloud Redis over TLS">
+            <Radio size={13} color="#9333EA" />
+            <span>Upstash TLS</span>
+          </div>
         </div>
 
         {/* Theme Toggle Button */}

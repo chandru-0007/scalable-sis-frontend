@@ -59,6 +59,18 @@ export const api = {
     register: (userData) => request('/api/auth/register', { method: 'POST', body: userData }),
     getMe: () => request('/api/auth/me'),
     logout: () => request('/api/auth/logout', { method: 'POST' }),
+    sendForgotPasswordOtp: (email) => request('/api/auth/forgot-password/send-otp', {
+      method: 'POST',
+      body: { email },
+    }),
+    resetPassword: (email, otp, newPassword) => request('/api/auth/forgot-password/reset', {
+      method: 'POST',
+      body: { email, otp, newPassword },
+    }),
+    changePassword: (oldPassword, newPassword) => request('/api/auth/change-password', {
+      method: 'POST',
+      body: { oldPassword, newPassword },
+    }),
   },
 
   // ─── Students & Profiles ───
@@ -190,6 +202,7 @@ export const api = {
     getFacultyList: () => request('/api/admin/faculty'),
     getFacultyWorkload: () => request('/api/admin/faculty/workload'),
     onboardFaculty: (data) => request('/api/admin/faculty', { method: 'POST', body: data }),
+    addUser: (data) => request('/api/admin/users', { method: 'POST', body: data }),
     assignFacultyToCourse: (code, payload) => request(`/api/admin/courses/${code}/assign-faculty`, {
       method: 'PUT',
       body: payload,

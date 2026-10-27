@@ -25,8 +25,8 @@ const ROLE_CONFIG = {
     defaultView: 'faculty',
   },
   ADMIN: {
-    allowedViews: ['admin', 'admin-reschedule', 'admin-faculty', 'admin-debarment', 'system', 'notifications'],
-    defaultView: 'admin',
+    allowedViews: ['admin', 'admin-onboard', 'admin-reschedule', 'admin-faculty', 'admin-debarment', 'system', 'notifications'],
+    defaultView: 'admin-onboard',
   },
   PARENT: {
     allowedViews: ['parent', 'notifications'],
@@ -37,6 +37,7 @@ const ROLE_CONFIG = {
 export default function App() {
   const { user, isAuthenticated, loading, refreshProfile } = useAuth();
   const role = (user?.role || 'STUDENT').toUpperCase();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentView, setCurrentView] = useState(() => {
     const hash = window.location.hash.replace('#', '').trim();
@@ -101,16 +102,30 @@ export default function App() {
       ) : !isAuthenticated ? (
         <AuthView />
       ) : (
-        <div style={styles.layout}>
-          {/* Soft UI Sidebar (254px) — Role-based items only */}
-          <Sidebar currentView={currentView} setCurrentView={handleNavigate} />
+        <div style={styles.layout} className="sis-app-layout">
+          {/* Mobile Drawer Backdrop */}
+          {mobileMenuOpen && (
+            <div
+              className="mobile-drawer-backdrop"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close navigation overlay"
+            />
+          )}
+
+          {/* Soft UI Sidebar — Collapsible on mobile/tablet, pinned on desktop */}
+          <Sidebar
+            currentView={currentView}
+            setCurrentView={handleNavigate}
+            mobileOpen={mobileMenuOpen}
+            onCloseMobile={() => setMobileMenuOpen(false)}
+          />
 
           {/* Main Content Area */}
-          <div style={styles.mainContent}>
-            <Topbar />
+          <div style={styles.mainContent} className="sis-main-content">
+            <Topbar onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)} />
 
-            <main style={styles.viewContainer}>
-              <div style={styles.contentWrapper}>
+            <main style={styles.viewContainer} className="sis-view-container">
+              <div style={styles.contentWrapper} className="sis-content-wrapper">
                 {/* Student Persona Views */}
                 {currentView === 'dashboard' && <DashboardView onNavigate={handleNavigate} />}
                 {currentView === 'assignments' && <AssignmentsView />}
@@ -127,7 +142,8 @@ export default function App() {
                 {currentView === 'faculty-grades' && <FacultyPortalView activeSubTab="grades" onNavigate={handleNavigate} />}
 
                 {/* Admin Persona Views */}
-                {currentView === 'admin' && <AdminPortalView initialTab="reschedule" onNavigate={handleNavigate} />}
+                {currentView === 'admin' && <AdminPortalView initialTab="onboard" onNavigate={handleNavigate} />}
+                {currentView === 'admin-onboard' && <AdminPortalView initialTab="onboard" onNavigate={handleNavigate} />}
                 {currentView === 'admin-reschedule' && <AdminPortalView initialTab="reschedule" onNavigate={handleNavigate} />}
                 {currentView === 'admin-faculty' && <AdminPortalView initialTab="faculty" onNavigate={handleNavigate} />}
                 {currentView === 'admin-debarment' && <AdminPortalView initialTab="debarred" onNavigate={handleNavigate} />}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 import {
   GraduationCap,
   ShieldCheck,
@@ -9,13 +10,15 @@ import {
   Lock,
   Mail,
   User,
-  Hash,
-  BookOpen,
+  ArrowLeft,
+  KeyRound,
+  CheckCircle2,
+  Send,
 } from 'lucide-react';
 
 export default function AuthView() {
-  const { login, register, switchDemoRole } = useAuth();
-  const [tab, setTab] = useState('login'); // 'login' | 'register'
+  const { login, switchDemoRole } = useAuth();
+  const [mode, setMode] = useState('login'); // 'login' | 'forgot'
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -25,14 +28,13 @@ export default function AuthView() {
   const [loginPassword, setLoginPassword] = useState('Chandru@123');
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Register state
-  const [regName, setRegName] = useState('');
-  const [regRollNumber, setRegRollNumber] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regDepartment, setRegDepartment] = useState('CSE');
-  const [regSemester, setRegSemester] = useState(5);
-  const [regRole, setRegRole] = useState('STUDENT');
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotOtp, setForgotOtp] = useState('');
+  const [forgotNewPass, setForgotNewPass] = useState('');
+  const [forgotConfirmPass, setForgotConfirmPass] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [demoOtpHint, setDemoOtpHint] = useState(null);
 
   async function handleLoginSubmit(e) {
     e.preventDefault();
@@ -47,33 +49,69 @@ export default function AuthView() {
     }
   }
 
-  async function handleRegisterSubmit(e) {
+  async function handleSendOtp(e) {
     e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setError('Please enter your registered student/faculty email or ID.');
+      return;
+    }
     setError(null);
     setSuccessMsg(null);
     setLoading(true);
     try {
-      await register({
-        name: regName,
-        rollNumber: regRollNumber,
-        email: regEmail,
-        password: regPassword,
-        department: regDepartment,
-        semester: Number(regSemester),
-        role: regRole,
-      });
-      setSuccessMsg('Account registered successfully! Redirecting...');
+      const res = await api.auth.sendForgotPasswordOtp(forgotEmail.trim());
+      setOtpSent(true);
+      setSuccessMsg(`Verification code sent to ${res.email || forgotEmail}. Check your inbox!`);
+      if (res.demoOtp) {
+        setDemoOtpHint(res.demoOtp);
+      }
     } catch (err) {
-      setError(err.message || 'Registration failed. Please check inputs.');
+      setError(err.message || 'Failed to send verification code. Please check your email.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResetPassword(e) {
+    e.preventDefault();
+    if (!forgotOtp.trim()) {
+      setError('Please enter the 6-digit verification code.');
+      return;
+    }
+    if (!forgotNewPass || forgotNewPass.length < 6) {
+      setError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (forgotNewPass !== forgotConfirmPass) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setError(null);
+    setSuccessMsg(null);
+    setLoading(true);
+    try {
+      const res = await api.auth.resetPassword(forgotEmail.trim(), forgotOtp.trim(), forgotNewPass);
+      setSuccessMsg(res.message || 'Password reset successfully! Please sign in with your new password.');
+      setMode('login');
+      setLoginId(forgotEmail.trim());
+      setLoginPassword(forgotNewPass);
+      setOtpSent(false);
+      setForgotOtp('');
+      setForgotNewPass('');
+      setForgotConfirmPass('');
+      setDemoOtpHint(null);
+    } catch (err) {
+      setError(err.message || 'Failed to reset password. Please check your OTP.');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={styles.container}>
-      {/* ─── Left Brand Panel (Soft UI Evolution Frosted Liquid Glass) ─── */}
-      <div style={styles.brandPanel}>
+    <div className="auth-page-container" style={styles.container}>
+      {/* ─── Left Brand Panel ─── */}
+      <div className="auth-brand-panel" style={styles.brandPanel}>
         <div style={styles.brandTop}>
           <div style={styles.brandLogoBox}>
             <GraduationCap size={26} color="#FFFFFF" />
@@ -87,7 +125,7 @@ export default function AuthView() {
           </h1>
           <p style={styles.brandSubhead}>
             Register for courses, track attendance, view grades and timetables —
-            built with distributed scale to stay fast as the university grows.
+            provisioned securely by university administration.
           </p>
 
           <div style={styles.featureList}>
@@ -96,33 +134,33 @@ export default function AuthView() {
                 <ShieldCheck size={18} color="#15803D" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Sharded student &amp; course records</div>
+                <div style={styles.featureTitle}>Admin-Provisioned Accounts</div>
                 <div style={styles.featureDesc}>
-                  Partitioned dynamically via Consistent Hashing across multiple MongoDB shard clusters.
+                  Credentials issued by Registrar with automatic Resend email notifications.
                 </div>
               </div>
             </div>
 
             <div style={styles.featureItem}>
-              <div style={{ ...styles.featureIcon, backgroundColor: '#FEF3C7', border: '1px solid #FDE68A' }}>
-                <Zap size={18} color="#D97706" />
-              </div>
-              <div>
-                <div style={styles.featureTitle}>Rate-limited, secure authentication</div>
-                <div style={styles.featureDesc}>
-                  Token Bucket rate limiting on Redis prevents brute-force attempts and seat sniping.
-                </div>
-              </div>
-            </div>
-
-            <div style={styles.featureItem}>
-              <div style={{ ...styles.featureIcon, backgroundColor: '#E0F2FE', border: '1px solid #BAE6FD' }}>
+              <div style={{ ...styles.featureIcon, backgroundColor: '#EFF6FF', border: '1px solid #BAE6FD' }}>
                 <Search size={18} color="#0284C7" />
               </div>
               <div>
                 <div style={styles.featureTitle}>Instant course &amp; student search</div>
                 <div style={styles.featureDesc}>
                   In-memory Prefix Trie autocomplete delivers suggestions in under 6 milliseconds.
+                </div>
+              </div>
+            </div>
+
+            <div style={styles.featureItem}>
+              <div style={{ ...styles.featureIcon, backgroundColor: '#FEF3C7', border: '1px solid #FDE68A' }}>
+                <KeyRound size={18} color="#D97706" />
+              </div>
+              <div>
+                <div style={styles.featureTitle}>Redis Key-Value OTP Recovery</div>
+                <div style={styles.featureDesc}>
+                  High-speed 10-minute TTL OTP verification for instant self-service password reset.
                 </div>
               </div>
             </div>
@@ -137,41 +175,17 @@ export default function AuthView() {
       </div>
 
       {/* ─── Right Form Panel ─── */}
-      <div style={styles.formPanel}>
-        <div style={styles.formCard}>
+      <div className="auth-form-panel" style={styles.formPanel}>
+        <div className="auth-form-card" style={styles.formCard}>
           <div style={styles.formHeader}>
             <h2 style={styles.formTitle}>
-              {tab === 'login' ? 'Welcome back' : 'Create your account'}
+              {mode === 'login' ? 'Welcome back' : 'Reset Password'}
             </h2>
             <p style={styles.formSubtitle}>
-              {tab === 'login'
-                ? 'Sign in with your student ID or email to continue.'
-                : 'A unique 64-bit Snowflake ID will be allocated automatically.'}
+              {mode === 'login'
+                ? 'Sign in with your academic ID or registered email.'
+                : 'Enter your registered email to receive a secure 6-digit OTP.'}
             </p>
-          </div>
-
-          {/* Tab Switcher */}
-          <div style={styles.tabContainer} className="pill-tab-bar">
-            <button
-              type="button"
-              onClick={() => { setTab('login'); setError(null); }}
-              style={{
-                ...styles.tabBtn,
-                ...(tab === 'login' ? styles.tabBtnActive : {}),
-              }}
-            >
-              Sign in
-            </button>
-            <button
-              type="button"
-              onClick={() => { setTab('register'); setError(null); }}
-              style={{
-                ...styles.tabBtn,
-                ...(tab === 'register' ? styles.tabBtnActive : {}),
-              }}
-            >
-              Register
-            </button>
           </div>
 
           {/* Error / Success message */}
@@ -183,16 +197,16 @@ export default function AuthView() {
           )}
           {successMsg && (
             <div style={styles.successAlert}>
-              <ShieldCheck size={16} color="#15803D" />
+              <CheckCircle2 size={16} color="#15803D" />
               <span>{successMsg}</span>
             </div>
           )}
 
-          {/* Login Form */}
-          {tab === 'login' ? (
+          {/* ─── Login Form ─── */}
+          {mode === 'login' ? (
             <form onSubmit={handleLoginSubmit}>
               <div className="form-group">
-                <label className="form-label">Student ID or Email</label>
+                <label className="form-label">Student ID, Staff ID, or College Email</label>
                 <div style={styles.inputWrapper}>
                   <User size={16} color="#94A3B8" style={styles.inputIcon} />
                   <input
@@ -232,9 +246,18 @@ export default function AuthView() {
                   />
                   <span>Remember me</span>
                 </label>
-                <a href="#forgot" onClick={(e) => e.preventDefault()} style={styles.forgotLink}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('forgot');
+                    setError(null);
+                    setSuccessMsg(null);
+                    setForgotEmail(loginId.includes('@') ? loginId : '');
+                  }}
+                  style={styles.forgotLinkBtn}
+                >
                   Forgot password?
-                </a>
+                </button>
               </div>
 
               <button
@@ -246,13 +269,19 @@ export default function AuthView() {
                 {loading ? <span className="spinner" /> : 'Sign in to Portal'}
               </button>
 
-              {/* Rate limit warning box matching Soft UI tokens */}
-              <div style={styles.rateLimitNotice}>
-                <Zap size={14} color="#D97706" />
-                <span>Login attempts are rate-limited: 5 per minute per IP via Redis.</span>
+              {/* Informational Provisioning Pill */}
+              <div style={styles.adminProvisionNotice}>
+                <ShieldCheck size={14} color="#0369A1" />
+                <span>Accounts are provisioned by Administration. Check your email for initial credentials.</span>
               </div>
 
-              {/* Viva Quick Demo Fillers */}
+              {/* Rate limit warning box */}
+              <div style={styles.rateLimitNotice}>
+                <Zap size={14} color="#D97706" />
+                <span>Protected by Redis Token Bucket Rate Limiting: 5 attempts/min.</span>
+              </div>
+
+              {/* Quick Viva Demo Credentials */}
               <div style={styles.demoBox}>
                 <div style={styles.demoTitle}>QUICK VIVA DEMO CREDENTIALS:</div>
                 <div style={styles.demoGrid}>
@@ -261,131 +290,162 @@ export default function AuthView() {
                     onClick={() => switchDemoRole('STUDENT')}
                     style={styles.demoBtn}
                   >
-                    👨‍🎓 Student: Chandru S
+                    👨‍🎓 Student: Chandru S (22CS014)
                   </button>
                   <button
                     type="button"
                     onClick={() => switchDemoRole('FACULTY')}
                     style={styles.demoBtn}
                   >
-                    👨‍🏫 Faculty: Dr. Ramanathan
+                    👨‍🏫 Faculty: Dr. Ramanathan (FAC001)
                   </button>
                   <button
                     type="button"
                     onClick={() => switchDemoRole('ADMIN')}
                     style={styles.demoBtn}
                   >
-                    🏛️ Registrar Admin
+                    🏛️ Registrar Admin (ADM001)
                   </button>
                 </div>
               </div>
             </form>
           ) : (
-            /* Register Form */
-            <form onSubmit={handleRegisterSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group">
-                  <label className="form-label">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Rahul Sharma"
-                    value={regName}
-                    onChange={(e) => setRegName(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
+            /* ─── Forgot Password / OTP Form ─── */
+            <div>
+              {!otpSent ? (
+                <form onSubmit={handleSendOtp}>
+                  <div className="form-group">
+                    <label className="form-label">Registered Email or Roll Number</label>
+                    <div style={styles.inputWrapper}>
+                      <Mail size={16} color="#94A3B8" style={styles.inputIcon} />
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. chandru@college.edu or 22CS014"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        className="form-input"
+                        style={{ paddingLeft: '38px' }}
+                      />
+                    </div>
+                  </div>
 
-                <div className="form-group">
-                  <label className="form-label">Roll Number / ID</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 24CS109"
-                    value={regRollNumber}
-                    onChange={(e) => setRegRollNumber(e.target.value)}
-                    className="form-input"
-                  />
-                </div>
-              </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                    We will send a one-time 6-digit verification code to your registered email via Resend.
+                  </p>
 
-              <div className="form-group">
-                <label className="form-label">College Email</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="rahul@college.edu"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Min 6 characters"
-                  value={regPassword}
-                  onChange={(e) => setRegPassword(e.target.value)}
-                  className="form-input"
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                <div className="form-group">
-                  <label className="form-label">Dept</label>
-                  <select
-                    value={regDepartment}
-                    onChange={(e) => setRegDepartment(e.target.value)}
-                    className="form-select"
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn-primary"
+                    style={{ width: '100%', height: '46px', fontSize: '15px', marginBottom: '14px' }}
                   >
-                    <option value="CSE">CSE</option>
-                    <option value="ECE">ECE</option>
-                    <option value="IT">IT</option>
-                    <option value="MECH">MECH</option>
-                  </select>
-                </div>
+                    {loading ? <span className="spinner" /> : (
+                      <>
+                        <Send size={15} style={{ marginRight: '8px', display: 'inline' }} />
+                        Send Verification Code
+                      </>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword}>
+                  <div style={{ backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD', padding: '12px 16px', borderRadius: '12px', marginBottom: '18px' }}>
+                    <div style={{ fontSize: '12px', color: '#0369A1', fontWeight: '600' }}>RECIPIENT</div>
+                    <div style={{ fontSize: '14px', color: '#0C4A6E', fontWeight: '700' }}>{forgotEmail}</div>
+                    {demoOtpHint && (
+                      <div style={{ marginTop: '6px', fontSize: '12px', color: '#0284C7' }}>
+                        Demo OTP Hint: <strong style={{ letterSpacing: '2px' }}>{demoOtpHint}</strong>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="form-group">
-                  <label className="form-label">Semester</label>
-                  <select
-                    value={regSemester}
-                    onChange={(e) => setRegSemester(e.target.value)}
-                    className="form-select"
+                  <div className="form-group">
+                    <label className="form-label">6-Digit Verification Code (OTP)</label>
+                    <div style={styles.inputWrapper}>
+                      <KeyRound size={16} color="#94A3B8" style={styles.inputIcon} />
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        placeholder="e.g. 584920"
+                        value={forgotOtp}
+                        onChange={(e) => setForgotOtp(e.target.value)}
+                        className="form-input"
+                        style={{ paddingLeft: '38px', letterSpacing: '4px', fontSize: '18px', fontWeight: '700' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">New Password</label>
+                    <div style={styles.inputWrapper}>
+                      <Lock size={16} color="#94A3B8" style={styles.inputIcon} />
+                      <input
+                        type="password"
+                        required
+                        placeholder="At least 6 characters"
+                        value={forgotNewPass}
+                        onChange={(e) => setForgotNewPass(e.target.value)}
+                        className="form-input"
+                        style={{ paddingLeft: '38px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Confirm New Password</label>
+                    <div style={styles.inputWrapper}>
+                      <Lock size={16} color="#94A3B8" style={styles.inputIcon} />
+                      <input
+                        type="password"
+                        required
+                        placeholder="Re-enter password"
+                        value={forgotConfirmPass}
+                        onChange={(e) => setForgotConfirmPass(e.target.value)}
+                        className="form-input"
+                        style={{ paddingLeft: '38px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn btn-primary"
+                    style={{ width: '100%', height: '46px', fontSize: '15px', marginBottom: '12px' }}
                   >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
-                      <option key={s} value={s}>
-                        Sem {s}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {loading ? <span className="spinner" /> : 'Confirm Password Reset'}
+                  </button>
 
-                <div className="form-group">
-                  <label className="form-label">Role</label>
-                  <select
-                    value={regRole}
-                    onChange={(e) => setRegRole(e.target.value)}
-                    className="form-select"
-                  >
-                    <option value="STUDENT">Student</option>
-                    <option value="FACULTY">Faculty</option>
-                    <option value="ADMIN">Admin</option>
-                  </select>
-                </div>
-              </div>
+                  <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={loading}
+                      style={{ background: 'none', border: 'none', color: 'var(--primary-blue)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}
+                    >
+                      Resend Verification Code
+                    </button>
+                  </div>
+                </form>
+              )}
 
+              {/* Back to Sign In button */}
               <button
-                type="submit"
-                disabled={loading}
-                className="btn btn-primary"
-                style={{ width: '100%', height: '46px', fontSize: '15px' }}
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setError(null);
+                  setSuccessMsg(null);
+                  setOtpSent(false);
+                }}
+                style={styles.backBtn}
               >
-                {loading ? <span className="spinner" /> : 'Register & Assign Shard'}
+                <ArrowLeft size={15} style={{ marginRight: '6px' }} />
+                Back to Sign in
               </button>
-            </form>
+            </div>
           )}
         </div>
       </div>
@@ -536,35 +596,6 @@ const styles = {
     fontSize: '14px',
     color: 'var(--text-muted)',
   },
-  tabContainer: {
-    display: 'flex',
-    backgroundColor: 'rgba(240, 244, 248, 0.75)',
-    backdropFilter: 'var(--glass-blur-subtle)',
-    WebkitBackdropFilter: 'var(--glass-blur-subtle)',
-    borderRadius: 'var(--radius-full)',
-    padding: '5px',
-    marginBottom: '24px',
-    border: '1px solid var(--glass-border)',
-  },
-  tabBtn: {
-    flex: 1,
-    padding: '9px 16px',
-    border: 'none',
-    backgroundColor: 'transparent',
-    fontWeight: '500',
-    fontSize: '13.5px',
-    color: 'var(--text-muted)',
-    borderRadius: 'var(--radius-full)',
-    cursor: 'pointer',
-    transition: 'all 180ms var(--spring-easing)',
-    textAlign: 'center',
-  },
-  tabBtnActive: {
-    backgroundColor: '#FFFFFF',
-    color: 'var(--primary-blue)',
-    boxShadow: '0 4px 14px rgba(100, 116, 139, 0.12), inset 0 1px 1.5px #FFFFFF',
-    fontWeight: '700',
-  },
   inputWrapper: {
     position: 'relative',
     display: 'flex',
@@ -590,15 +621,33 @@ const styles = {
     color: 'var(--text-secondary)',
     cursor: 'pointer',
   },
-  forgotLink: {
+  forgotLinkBtn: {
+    background: 'none',
+    border: 'none',
     color: 'var(--primary-blue)',
     fontWeight: '600',
-    textDecoration: 'none',
+    fontSize: '13px',
+    cursor: 'pointer',
+    padding: 0,
+  },
+  adminProvisionNotice: {
+    marginTop: '14px',
+    padding: '11px 16px',
+    borderRadius: '14px',
+    backgroundColor: '#F0F9FF',
+    border: '1px solid #BAE6FD',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '12px',
+    color: '#0369A1',
+    fontWeight: '500',
+    lineHeight: '1.4',
   },
   rateLimitNotice: {
-    marginTop: '16px',
+    marginTop: '10px',
     padding: '11px 16px',
-    borderRadius: '16px',
+    borderRadius: '14px',
     backgroundColor: '#FEF3C7',
     border: '1px solid #FDE68A',
     display: 'flex',
@@ -640,6 +689,21 @@ const styles = {
     textAlign: 'left',
     transition: 'all 180ms var(--spring-easing)',
     boxShadow: '0 2px 8px rgba(100, 116, 139, 0.08), inset 0 1px 1px #FFFFFF',
+  },
+  backBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    padding: '10px 16px',
+    background: 'none',
+    border: '1px solid var(--glass-border)',
+    borderRadius: '12px',
+    color: 'var(--text-secondary)',
+    fontWeight: '600',
+    fontSize: '13.5px',
+    cursor: 'pointer',
+    transition: 'all 180ms ease',
   },
   errorAlert: {
     padding: '11px 16px',

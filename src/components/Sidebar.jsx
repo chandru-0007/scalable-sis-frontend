@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../api';
 import {
   LayoutDashboard,
   Search,
@@ -22,6 +23,11 @@ import {
   Check,
   Trash2,
   FileCheck,
+  KeyRound,
+  Lock,
+  Eye,
+  EyeOff,
+  UserPlus,
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -69,9 +75,10 @@ const ROLE_NAV = {
   ADMIN: {
     heading: 'REGISTRAR & ADMINISTRATION',
     items: [
-      { id: 'admin', label: 'Admin Command', icon: ShieldAlert },
+      { id: 'admin-onboard', label: 'Onboard Users', icon: UserPlus },
+      { id: 'admin', label: 'Admin Command & Catalog', icon: ShieldAlert },
       { id: 'admin-reschedule', label: 'Course Rescheduling', icon: CalendarDays },
-      { id: 'admin-faculty', label: 'Faculty Onboarding', icon: Briefcase },
+      { id: 'admin-faculty', label: 'Faculty Allocation', icon: Briefcase },
       { id: 'admin-debarment', label: 'Debarment Audits', icon: Users },
       { id: 'system', label: 'System Monitor', icon: Activity, highlight: true },
       { id: 'notifications', label: 'Notices & Circulars', icon: BellRing },
@@ -86,7 +93,7 @@ const ROLE_NAV = {
   },
 };
 
-export default function Sidebar({ currentView, setCurrentView }) {
+export default function Sidebar({ currentView, setCurrentView, mobileOpen, onCloseMobile }) {
   const { user, logout, updateProfilePicture } = useAuth();
   const role = (user?.role || 'STUDENT').toUpperCase();
   const currentNav = ROLE_NAV[role] || ROLE_NAV.STUDENT;
@@ -95,6 +102,53 @@ export default function Sidebar({ currentView, setCurrentView }) {
   const [previewPic, setPreviewPic] = useState(user?.profilePicture || null);
   const [savingPic, setSavingPic] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Change Password State
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [showOldPass, setShowOldPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+
+  const handleChangePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    if (!oldPassword) {
+      setPasswordError('Please enter your current or temporary password.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirm password do not match.');
+      return;
+    }
+
+    setSubmittingPassword(true);
+    try {
+      const res = await api.auth.changePassword(oldPassword, newPassword);
+      setPasswordSuccess(res.message || 'Password changed successfully!');
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setPasswordSuccess('');
+      }, 1600);
+    } catch (err) {
+      setPasswordError(err.message || 'Failed to change password. Please verify current password.');
+    } finally {
+      setSubmittingPassword(false);
+    }
+  };
 
   const initials = user?.name
     ? user.name
@@ -160,16 +214,30 @@ export default function Sidebar({ currentView, setCurrentView }) {
 
   return (
     <>
-      <aside style={styles.sidebar}>
+      <aside
+        style={styles.sidebar}
+        className={`sis-sidebar ${mobileOpen ? 'mobile-open' : ''}`}
+      >
         {/* Brand Header */}
-        <div style={styles.brand}>
-          <div style={styles.logoMark}>
-            <GraduationCap size={20} color="#FFFFFF" />
+        <div style={{ ...styles.brand, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={styles.logoMark}>
+              <GraduationCap size={20} color="#FFFFFF" />
+            </div>
+            <div>
+              <div style={styles.brandTitle}>SIS Portal</div>
+              <div style={styles.brandSubtitle}>Academic Workspace</div>
+            </div>
           </div>
-          <div>
-            <div style={styles.brandTitle}>SIS Portal</div>
-            <div style={styles.brandSubtitle}>Academic Workspace</div>
-          </div>
+          {/* Mobile Close Button */}
+          <button
+            type="button"
+            className="sidebar-mobile-close-btn"
+            onClick={onCloseMobile}
+            aria-label="Close navigation menu"
+          >
+            <X size={18} />
+          </button>
         </div>
 
         {/* Navigation List — Strictly filtered by user role */}
@@ -187,6 +255,7 @@ export default function Sidebar({ currentView, setCurrentView }) {
                 onClick={(e) => {
                   e.preventDefault();
                   setCurrentView(item.id);
+                  if (onCloseMobile) onCloseMobile();
                 }}
                 style={{
                   ...styles.navItem,
@@ -277,13 +346,31 @@ export default function Sidebar({ currentView, setCurrentView }) {
                 {role === 'PARENT' && `Ward: ${user?.wardRollNumber || '22CS014'}`}
               </div>
             </div>
-            <button
-              onClick={logout}
-              style={styles.logoutBtn}
-              title="Sign Out"
-            >
-              <LogOut size={16} color="var(--text-muted)" />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(true);
+                  setOldPassword('');
+                  setNewPassword('');
+                  setConfirmPassword('');
+                  setPasswordError('');
+                  setPasswordSuccess('');
+                }}
+                style={styles.logoutBtn}
+                title="Change Account Password"
+                aria-label="Change Password"
+              >
+                <KeyRound size={15} color="var(--text-muted)" />
+              </button>
+              <button
+                onClick={logout}
+                style={styles.logoutBtn}
+                title="Sign Out"
+                aria-label="Sign Out"
+              >
+                <LogOut size={16} color="var(--text-muted)" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
@@ -478,6 +565,217 @@ export default function Sidebar({ currentView, setCurrentView }) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.65)',
+            backdropFilter: 'blur(6px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setShowPasswordModal(false)}
+        >
+          <div
+            style={{
+              backgroundColor: 'var(--card-bg, #FFFFFF)',
+              borderRadius: '20px',
+              padding: '28px',
+              width: '100%',
+              maxWidth: '440px',
+              border: '1px solid var(--border-color, #E2E8F0)',
+              boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+              color: 'var(--text-main, #0F172A)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div
+                  style={{
+                    width: '38px',
+                    height: '38px',
+                    borderRadius: '10px',
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--primary-blue, #0284C7)',
+                  }}
+                >
+                  <KeyRound size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '700' }}>Change Password</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: 'var(--text-muted, #64748B)' }}>
+                    Update your SIS portal security credentials
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowPasswordModal(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-muted)' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {passwordError && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#FEF2F2',
+                  border: '1px solid #FECACA',
+                  color: '#991B1B',
+                  fontSize: '0.82rem',
+                  marginBottom: '16px',
+                }}
+              >
+                {passwordError}
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderRadius: '10px',
+                  backgroundColor: '#F0FDF4',
+                  border: '1px solid #BBF7D0',
+                  color: '#166534',
+                  fontSize: '0.82rem',
+                  marginBottom: '16px',
+                }}
+              >
+                {passwordSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePasswordSubmit}>
+              {/* Current Password */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '6px' }}>
+                  Current / Temporary Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showOldPass ? 'text' : 'password'}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Enter current or temporary password"
+                    className="form-input"
+                    required
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPass(!showOldPass)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)',
+                    }}
+                  >
+                    {showOldPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div style={{ marginBottom: '14px' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '6px' }}>
+                  New Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="form-input"
+                    required
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--text-muted)',
+                    }}
+                  >
+                    {showNewPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div style={{ marginBottom: '22px' }}>
+                <label className="form-label" style={{ fontSize: '0.8rem', marginBottom: '6px' }}>
+                  Confirm New Password
+                </label>
+                <input
+                  type={showNewPass ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="form-input"
+                  required
+                />
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '8px 14px' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingPassword}
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {submittingPassword ? (
+                    <>
+                      <span className="spinner" style={{ width: '14px', height: '14px' }} />
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock size={14} />
+                      <span>Update Password</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

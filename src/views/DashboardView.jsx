@@ -121,9 +121,9 @@ export default function DashboardView({ onNavigate }) {
   });
 
   return (
-    <div style={styles.container} className="animate-fade-in">
+    <div className="sis-view-container animate-fade-in" style={{ maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
       {/* ─── 1. Stats Row ─── */}
-      <div style={styles.statsGrid}>
+      <div className="dashboard-stats-grid">
         <div className="stat-card">
           <div className="stat-card-top">
             <span className="stat-label">Courses Enrolled</span>
@@ -186,7 +186,7 @@ export default function DashboardView({ onNavigate }) {
       </div>
 
       {/* ─── 2. Main Two-Column Row (Timetable + Attendance & Notices) ─── */}
-      <div style={styles.mainGrid}>
+      <div className="dashboard-main-grid">
         {/* Left Column: Today's Timetable + Course Attendance */}
         <div style={styles.columnLeft}>
           {/* Today's Timetable Card */}

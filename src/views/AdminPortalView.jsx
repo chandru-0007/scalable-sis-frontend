@@ -23,6 +23,10 @@ import {
   Briefcase,
   ExternalLink,
   X,
+  Mail,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 const STANDARD_ROOMS = [
@@ -73,17 +77,30 @@ const RESCHEDULE_REASONS = [
   'Elective clash elimination for core department batch',
 ];
 
-export default function AdminPortalView({ initialTab }) {
+export default function AdminPortalView({ initialTab = 'onboard', onNavigate }) {
   const { addToast } = useRealtime();
 
-  // Active Tab: 'courses' | 'reschedule' | 'students' | 'faculty' | 'debarred' | 'broadcast'
-  const [activeTab, setActiveTab] = useState(initialTab || 'courses');
+  // Active Tab: 'onboard' | 'courses' | 'reschedule' | 'students' | 'faculty' | 'debarred' | 'broadcast'
+  const [activeTab, setActiveTab] = useState(initialTab || 'onboard');
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  const handleTabSwitch = (tab) => {
+    setActiveTab(tab);
+    if (onNavigate) {
+      if (tab === 'onboard') onNavigate('admin-onboard');
+      else if (tab === 'courses') onNavigate('admin');
+      else if (tab === 'reschedule') onNavigate('admin-reschedule');
+      else if (tab === 'faculty') onNavigate('admin-faculty');
+      else if (tab === 'debarred') onNavigate('admin-debarment');
+      else if (tab === 'students') onNavigate('admin');
+      else if (tab === 'broadcast') onNavigate('notifications');
+    }
+  };
 
   // Overview Metrics State
   const [overview, setOverview] = useState(null);
@@ -151,6 +168,21 @@ export default function AdminPortalView({ initialTab }) {
   const [facDept, setFacDept] = useState('CSE');
   const [facPass, setFacPass] = useState('Faculty@123');
   const [facSubmitting, setFacSubmitting] = useState(false);
+
+  // Unified User Onboarding State
+  const [onboardRole, setOnboardRole] = useState('STUDENT');
+  const [onboardName, setOnboardName] = useState('');
+  const [onboardEmail, setOnboardEmail] = useState('');
+  const [onboardRoll, setOnboardRoll] = useState('');
+  const [onboardDept, setOnboardDept] = useState('CSE');
+  const [onboardSemester, setOnboardSemester] = useState(1);
+  const [autoGenPassword, setAutoGenPassword] = useState(true);
+  const [customPassword, setCustomPassword] = useState('');
+  const [onboardingSubmitting, setOnboardingSubmitting] = useState(false);
+  const [recentOnboardedUser, setRecentOnboardedUser] = useState(null);
+  const [copiedPass, setCopiedPass] = useState(false);
+  const [userDirectorySearch, setUserDirectorySearch] = useState('');
+  const [userDirectoryRoleFilter, setUserDirectoryRoleFilter] = useState('ALL');
 
   // Debarred Audit State
   const [debarredStudents, setDebarredStudents] = useState([]);
@@ -513,6 +545,92 @@ export default function AdminPortalView({ initialTab }) {
     }
   }
 
+  // Unified User Onboarding Submit (Admin adds Student or Faculty with random password & email dispatch)
+  async function handleOnboardUser(e) {
+    e.preventDefault();
+    if (!onboardName || !onboardEmail || !onboardRoll) return;
+
+    setOnboardingSubmitting(true);
+    setRecentOnboardedUser(null);
+    setCopiedPass(false);
+
+    try {
+      const payload = {
+        name: onboardName.trim(),
+        email: onboardEmail.trim().toLowerCase(),
+        rollNumber: onboardRoll.trim().toUpperCase(),
+        department: onboardDept,
+        role: onboardRole,
+        semester: onboardRole === 'STUDENT' ? Number(onboardSemester) : 0,
+      };
+
+      if (!autoGenPassword && customPassword.trim()) {
+        payload.password = customPassword.trim();
+      }
+
+      const res = await api.admin.addUser(payload);
+
+      setRecentOnboardedUser(res);
+      addToast({
+        type: 'success',
+        title: `${onboardRole} Account Created!`,
+        message: `${payload.name} (${payload.rollNumber}) provisioned on ${res.user?.targetShard || 'cluster'}. Credentials email dispatched via Brevo.`,
+      });
+
+      // Clear input fields
+      setOnboardName('');
+      setOnboardEmail('');
+      setOnboardRoll('');
+      setCustomPassword('');
+
+      // Refresh data
+      loadStudents();
+      loadFaculty();
+      loadOverview();
+    } catch (err) {
+      console.error('Failed to onboard user:', err);
+      addToast({
+        type: 'error',
+        title: 'Onboarding Failed',
+        message: err.message || 'Error occurred while provisioning user.',
+      });
+    } finally {
+      setOnboardingSubmitting(false);
+    }
+  }
+
+  const allUsersList = useMemo(() => {
+    const list = [];
+    (studentList || []).forEach((s) => {
+      list.push({
+        ...s,
+        role: s.role || 'STUDENT',
+        displayName: s.name,
+        rollOrId: s.rollNumber,
+      });
+    });
+    (facultyList || []).forEach((f) => {
+      list.push({
+        ...f,
+        role: f.role || 'FACULTY',
+        displayName: f.name,
+        rollOrId: f.rollNumber || f.id || 'FAC',
+      });
+    });
+
+    return list.filter((u) => {
+      if (userDirectoryRoleFilter !== 'ALL' && u.role !== userDirectoryRoleFilter) return false;
+      if (!userDirectorySearch.trim()) return true;
+      const q = userDirectorySearch.toLowerCase();
+      return (
+        (u.displayName && u.displayName.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.rollOrId && u.rollOrId.toLowerCase().includes(q)) ||
+        (u.department && u.department.toLowerCase().includes(q))
+      );
+    });
+  }, [studentList, facultyList, userDirectorySearch, userDirectoryRoleFilter]);
+
   // Student Drilldown & Enrollments
   async function handleSelectStudent(student) {
     setSelectedStudentForEnroll(student);
@@ -637,19 +755,29 @@ export default function AdminPortalView({ initialTab }) {
   );
 
   return (
-    <div style={styles.container} className="animate-fade-in">
+    <div className="sis-view-container animate-fade-in" style={{ maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
       {/* ─── Header & Main Tabs ─── */}
       <div style={styles.header}>
         <div>
-          <h2 style={styles.title}>Academic Registrar & Administrator Command Center</h2>
+          <h2 className="admin-header-title" style={styles.title}>Academic Registrar & Administrator Command Center</h2>
           <p style={styles.subtitle}>
             Course Catalog &bull; Faculty Assignment &bull; Student Overrides &bull; Rescheduling &bull; Debarment Audits
           </p>
         </div>
 
-        <div style={styles.tabs}>
+        <div className="admin-tabs-bar" style={styles.tabs}>
           <button
-            onClick={() => setActiveTab('courses')}
+            onClick={() => handleTabSwitch('onboard')}
+            style={{
+              ...styles.tabBtn,
+              ...(activeTab === 'onboard' ? styles.tabBtnActive : {}),
+            }}
+          >
+            <UserPlus size={14} style={{ display: 'inline', marginRight: '6px' }} />
+            Onboard Users
+          </button>
+          <button
+            onClick={() => handleTabSwitch('courses')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'courses' ? styles.tabBtnActive : {}),
@@ -659,7 +787,7 @@ export default function AdminPortalView({ initialTab }) {
             Course Catalog
           </button>
           <button
-            onClick={() => setActiveTab('reschedule')}
+            onClick={() => handleTabSwitch('reschedule')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'reschedule' ? styles.tabBtnActive : {}),
@@ -669,7 +797,7 @@ export default function AdminPortalView({ initialTab }) {
             Reschedule Engine
           </button>
           <button
-            onClick={() => setActiveTab('students')}
+            onClick={() => handleTabSwitch('students')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'students' ? styles.tabBtnActive : {}),
@@ -679,7 +807,7 @@ export default function AdminPortalView({ initialTab }) {
             Student Overrides
           </button>
           <button
-            onClick={() => setActiveTab('faculty')}
+            onClick={() => handleTabSwitch('faculty')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'faculty' ? styles.tabBtnActive : {}),
@@ -689,7 +817,7 @@ export default function AdminPortalView({ initialTab }) {
             Faculty Allocation
           </button>
           <button
-            onClick={() => setActiveTab('debarred')}
+            onClick={() => handleTabSwitch('debarred')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'debarred' ? styles.tabBtnActive : {}),
@@ -699,7 +827,7 @@ export default function AdminPortalView({ initialTab }) {
             Debarment Audit
           </button>
           <button
-            onClick={() => setActiveTab('broadcast')}
+            onClick={() => handleTabSwitch('broadcast')}
             style={{
               ...styles.tabBtn,
               ...(activeTab === 'broadcast' ? styles.tabBtnActive : {}),
@@ -761,6 +889,339 @@ export default function AdminPortalView({ initialTab }) {
           </div>
         </div>
       </div>
+
+      {/* ─── TAB 0: USER ONBOARDING & PROVISIONING (Admin Only) ─── */}
+      {activeTab === 'onboard' && (
+        <div className="admin-grid-two animate-fade-in">
+          {/* Left: Provision New Student or Faculty Member */}
+          <div className="sis-card">
+            <div className="sis-card-header">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <h3>Provision New University Account</h3>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                    Admin-exclusive user creation with automatic random password &amp; Brevo email dispatch
+                  </p>
+                </div>
+                <span className="chip chip-success" style={{ fontSize: '11px' }}>
+                  Brevo Active
+                </span>
+              </div>
+            </div>
+
+            <div className="sis-card-body">
+              {recentOnboardedUser && (
+                <div
+                  style={{
+                    padding: '16px',
+                    borderRadius: '14px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    marginBottom: '20px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065F46', fontWeight: '700', fontSize: '14px', marginBottom: '8px' }}>
+                    <CheckCircle size={18} color="#10B981" />
+                    <span>Account Successfully Provisioned!</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                    User: <strong>{recentOnboardedUser.user?.name}</strong> ({recentOnboardedUser.user?.rollNumber}) &bull; Shard: <code>{recentOnboardedUser.user?.targetShard}</code>
+                  </div>
+
+                  <div style={{ backgroundColor: 'var(--card-bg, #FFFFFF)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '12px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                      GENERATED TEMPORARY PASSWORD
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span className="mono" style={{ fontSize: '16px', fontWeight: '800', color: 'var(--primary-blue)', letterSpacing: '0.05em' }}>
+                        {recentOnboardedUser.temporaryPassword}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (recentOnboardedUser?.temporaryPassword) {
+                            navigator.clipboard.writeText(recentOnboardedUser.temporaryPassword);
+                            setCopiedPass(true);
+                            setTimeout(() => setCopiedPass(false), 2000);
+                          }
+                        }}
+                        className="btn btn-outline btn-sm"
+                        style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '4px 10px' }}
+                      >
+                        {copiedPass ? <Check size={13} color="#10B981" /> : <Copy size={13} />}
+                        <span>{copiedPass ? 'Copied' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#047857' }}>
+                    <Mail size={14} />
+                    <span>
+                      {recentOnboardedUser.emailDispatched
+                        ? `Credentials email dispatched directly to ${recentOnboardedUser.user?.email} via Brevo.`
+                        : `Credentials email queued for ${recentOnboardedUser.user?.email}.`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleOnboardUser}>
+                {/* Role Switcher Pill */}
+                <div style={{ marginBottom: '18px' }}>
+                  <label className="form-label" style={{ marginBottom: '8px' }}>Account Persona / Role</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setOnboardRole('STUDENT')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '10px',
+                        border: onboardRole === 'STUDENT' ? '2px solid var(--primary-blue)' : '1px solid var(--border)',
+                        backgroundColor: onboardRole === 'STUDENT' ? 'rgba(2, 132, 199, 0.08)' : 'var(--bg-surface)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontWeight: onboardRole === 'STUDENT' ? '700' : '500',
+                        color: onboardRole === 'STUDENT' ? 'var(--primary-blue)' : 'var(--text-main)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <GraduationCap size={16} />
+                      <span>Student</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setOnboardRole('FACULTY')}
+                      style={{
+                        padding: '10px',
+                        borderRadius: '10px',
+                        border: onboardRole === 'FACULTY' ? '2px solid var(--primary-blue)' : '1px solid var(--border)',
+                        backgroundColor: onboardRole === 'FACULTY' ? 'rgba(2, 132, 199, 0.08)' : 'var(--bg-surface)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontWeight: onboardRole === 'FACULTY' ? '700' : '500',
+                        color: onboardRole === 'FACULTY' ? 'var(--primary-blue)' : 'var(--text-main)',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <Briefcase size={16} />
+                      <span>Faculty Member</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Full Name */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label className="form-label">Full Legal Name</label>
+                  <input
+                    type="text"
+                    value={onboardName}
+                    onChange={(e) => setOnboardName(e.target.value)}
+                    placeholder={onboardRole === 'STUDENT' ? 'e.g. Ramesh K' : 'e.g. Dr. Ramesh Kumar'}
+                    className="form-input"
+                    required
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label className="form-label">University Email Address</label>
+                  <input
+                    type="email"
+                    value={onboardEmail}
+                    onChange={(e) => setOnboardEmail(e.target.value)}
+                    placeholder={onboardRole === 'STUDENT' ? 'e.g. ramesh.k@college.edu' : 'e.g. ramesh.kumar@college.edu'}
+                    className="form-input"
+                    required
+                  />
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Login credentials will be automatically dispatched to this email address via Brevo.
+                  </div>
+                </div>
+
+                {/* Roll / ID and Department */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
+                  <div>
+                    <label className="form-label">{onboardRole === 'STUDENT' ? 'Roll Number' : 'Faculty Employee ID'}</label>
+                    <input
+                      type="text"
+                      value={onboardRoll}
+                      onChange={(e) => setOnboardRoll(e.target.value)}
+                      placeholder={onboardRole === 'STUDENT' ? 'e.g. 22CS088' : 'e.g. FAC008'}
+                      className="form-input mono"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Department</label>
+                    <select
+                      value={onboardDept}
+                      onChange={(e) => setOnboardDept(e.target.value)}
+                      className="form-input"
+                    >
+                      <option value="CSE">Computer Science &amp; Engineering</option>
+                      <option value="ECE">Electronics &amp; Communication</option>
+                      <option value="IT">Information Technology</option>
+                      <option value="MECH">Mechanical Engineering</option>
+                      <option value="AIDS">Artificial Intelligence &amp; Data Science</option>
+                      <option value="CSBS">Computer Science &amp; Business Systems</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Semester (if Student) */}
+                {onboardRole === 'STUDENT' && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <label className="form-label">Current Academic Semester</label>
+                    <select
+                      value={onboardSemester}
+                      onChange={(e) => setOnboardSemester(e.target.value)}
+                      className="form-input"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                        <option key={s} value={s}>
+                          Semester {s}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Password Configuration */}
+                <div style={{ marginBottom: '22px', padding: '14px', borderRadius: '12px', backgroundColor: 'var(--bg-subtle, #F8FAFC)', border: '1px solid var(--border)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: 'var(--text-main)', margin: 0 }}>
+                    <input
+                      type="checkbox"
+                      checked={autoGenPassword}
+                      onChange={(e) => setAutoGenPassword(e.target.checked)}
+                      style={{ width: '16px', height: '16px', accentColor: 'var(--primary-blue)' }}
+                    />
+                    <span>Auto-generate cryptographically secure random password</span>
+                  </label>
+                  {!autoGenPassword && (
+                    <div style={{ marginTop: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Custom Initial Password</label>
+                      <input
+                        type="text"
+                        value={customPassword}
+                        onChange={(e) => setCustomPassword(e.target.value)}
+                        placeholder="Enter custom password"
+                        className="form-input mono"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={onboardingSubmitting}
+                  className="btn btn-primary"
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+                >
+                  {onboardingSubmitting ? (
+                    <>
+                      <span className="spinner" style={{ width: '16px', height: '16px' }} />
+                      <span>Provisioning Account &amp; Sending Email...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={16} />
+                      <span>Provision {onboardRole === 'STUDENT' ? 'Student' : 'Faculty'} Account</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right: Enrolled Users Directory & Status */}
+          <div className="sis-card">
+            <div className="sis-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3>University User Registry</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  Showing {allUsersList.length} active students &amp; faculty across MongoDB Atlas Shards
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <select
+                  value={userDirectoryRoleFilter}
+                  onChange={(e) => setUserDirectoryRoleFilter(e.target.value)}
+                  className="form-input"
+                  style={{ width: '120px', fontSize: '12px', padding: '6px 10px' }}
+                >
+                  <option value="ALL">All Roles</option>
+                  <option value="STUDENT">Students</option>
+                  <option value="FACULTY">Faculty</option>
+                </select>
+                <input
+                  type="text"
+                  placeholder="Search user..."
+                  value={userDirectorySearch}
+                  onChange={(e) => setUserDirectorySearch(e.target.value)}
+                  className="form-input"
+                  style={{ width: '180px', fontSize: '12px', padding: '6px 10px' }}
+                />
+              </div>
+            </div>
+
+            <div className="sis-card-body" style={{ padding: 0 }}>
+              {allUsersList.length === 0 ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No users found matching your search.
+                </div>
+              ) : (
+                <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead style={{ position: 'sticky', top: 0, backgroundColor: 'var(--bg-surface-secondary)', zIndex: 1 }}>
+                      <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '10px 14px' }}>User</th>
+                        <th style={{ padding: '10px 14px' }}>Role</th>
+                        <th style={{ padding: '10px 14px' }}>Dept</th>
+                        <th style={{ padding: '10px 14px' }}>Shard Node</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allUsersList.map((u, i) => (
+                        <tr key={u.id || u.studentId || u.rollOrId || i} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '10px 14px' }}>
+                            <div style={{ fontWeight: '600', color: 'var(--text-heading)' }}>{u.displayName}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <span className="mono">{u.rollOrId}</span> &bull; {u.email}
+                            </div>
+                          </td>
+                          <td style={{ padding: '10px 14px' }}>
+                            <span className={u.role === 'FACULTY' ? 'chip chip-purple' : 'chip chip-info'} style={{ fontSize: '10px' }}>
+                              {u.role}
+                            </span>
+                          </td>
+                          <td style={{ padding: '10px 14px' }}>
+                            <span style={{ fontWeight: '500' }}>{u.department || 'CSE'}</span>
+                            {u.semester ? <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}> (S{u.semester})</span> : null}
+                          </td>
+                          <td style={{ padding: '10px 14px' }}>
+                            <span className="chip chip-neutral mono" style={{ fontSize: '11px' }}>
+                              {u.targetShard || u.assignedShard || 'sis_shard_0'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── TAB 1: COURSE CATALOG & CAPACITY MANAGEMENT ─── */}
       {activeTab === 'courses' && (
@@ -888,7 +1349,7 @@ export default function AdminPortalView({ initialTab }) {
 
       {/* ─── TAB 2: RESCHEDULE ENGINE ─── */}
       {activeTab === 'reschedule' && (
-        <div style={styles.gridTwo}>
+        <div className="admin-grid-two">
           {/* Left: Input Form */}
           <div className="sis-card">
             <div className="sis-card-header">
@@ -1188,7 +1649,7 @@ export default function AdminPortalView({ initialTab }) {
 
       {/* ─── TAB 3: STUDENT OVERRIDES & ADMISSIONS ─── */}
       {activeTab === 'students' && (
-        <div style={styles.gridTwo}>
+        <div className="admin-grid-two">
           {/* Left: Registered Students Directory */}
           <div className="sis-card">
             <div className="sis-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1376,7 +1837,7 @@ export default function AdminPortalView({ initialTab }) {
 
       {/* ─── TAB 4: FACULTY ALLOCATION & ONBOARDING ─── */}
       {activeTab === 'faculty' && (
-        <div style={styles.gridTwo}>
+        <div className="admin-grid-two">
           {/* Left: Onboard Faculty Member */}
           <div className="sis-card">
             <div className="sis-card-header">
