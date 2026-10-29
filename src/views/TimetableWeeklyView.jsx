@@ -225,7 +225,7 @@ export default function TimetableWeeklyView() {
               <strong>{isFaculty ? 'Confirmed Teaching Schedule:' : 'Dynamic Live Schedule:'}</strong> Displaying {timetableSlots.length} confirmed lecture &amp; laboratory sessions {isFaculty ? 'across your assigned teaching courses.' : 'from your enrolled courses.'}
             </span>
           </div>
-          <span className="chip chip-success">Synced with Redis</span>
+          <span className="chip chip-success">Official Schedule</span>
         </div>
       ) : null}
 
@@ -449,7 +449,7 @@ export default function TimetableWeeklyView() {
                   </div>
                   <div style={styles.tipBox}>
                     <span style={{ fontSize: '0.76rem', color: '#065F46' }}>
-                      💡 Timetable updates synchronize across all nodes via Upstash Redis Pub/Sub invalidation channels.
+                      💡 Timetable schedules reflect real-time registrar updates and classroom allocations.
                     </span>
                   </div>
                 </div>

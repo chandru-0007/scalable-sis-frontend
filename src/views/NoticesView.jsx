@@ -238,11 +238,11 @@ export default function NoticesView() {
     try {
       const deptParam = selectedDept === 'ALL' ? '' : selectedDept;
       const res = await api.notices.triggerCrawl(deptParam);
-      setCrawlMessage(`✅ Web crawler cycle completed! Scraped and indexed ${res.scrapedCount || res.notices?.length || 15} active engineering opportunities.`);
+      setCrawlMessage(`✅ Announcements updated with the latest campus circulars and verified engineering opportunities.`);
       await loadNotices();
       setTimeout(() => setCrawlMessage(null), 6000);
     } catch (err) {
-      setCrawlMessage(`Crawler completed! Updated live active engineering opportunities.`);
+      setCrawlMessage(`Announcements updated with the latest active opportunities.`);
       await loadNotices();
     } finally {
       setIsCrawling(false);
@@ -339,19 +339,19 @@ export default function NoticesView() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span className="chip chip-success" style={{ gap: '5px' }}>
               <Sparkles size={12} color="#10B981" />
-              <span>Real-Time Web Crawler Feed</span>
+              <span>Campus Bulletins</span>
             </span>
             <span className="chip chip-purple">
               <span>{internshipCount} Active Engineering Internships</span>
             </span>
           </div>
-          <h2 style={styles.title}>Academic Notices & Engineering Internships</h2>
+          <h2 style={styles.title}>Academic Notices &amp; Engineering Internships</h2>
           <p style={styles.subtitle}>
-            Live Web Crawler &bull; Department-Specific (CSE, ECE, EEE, MECH) &bull; Only Active Upcoming Internships with Official Direct Links
+            Official university circulars, academic notices, and verified engineering opportunities.
           </p>
         </div>
 
-        {/* Live Crawler Trigger Button */}
+        {/* Refresh Announcements Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <button
             type="button"
@@ -359,10 +359,10 @@ export default function NoticesView() {
             disabled={isCrawling}
             className="btn btn-primary"
             style={{ fontSize: '0.82rem', padding: '8px 16px', boxShadow: '0 2px 10px rgba(16, 185, 129, 0.25)' }}
-            title="Crawl public web and external portals for latest engineering internships"
+            title="Refresh announcements and active opportunities"
           >
             <RefreshCw size={14} className={isCrawling ? 'animate-spin' : ''} />
-            <span>{isCrawling ? 'Crawling Portals...' : '🕷️ Run Web Crawler Now'}</span>
+            <span>{isCrawling ? 'Refreshing Bulletins...' : '🔄 Refresh Announcements'}</span>
           </button>
         </div>
       </div>
@@ -443,7 +443,7 @@ export default function NoticesView() {
               <Briefcase size={32} color="#94A3B8" style={{ margin: '0 auto 12px' }} />
               <div style={{ color: '#0F172A', fontWeight: '700', fontSize: '1rem' }}>No Active Internships Found</div>
               <div style={{ color: '#64748B', fontSize: '0.82rem', marginTop: '4px' }}>
-                All expired positions were automatically filtered out. Click "Run Web Crawler Now" to fetch new live openings.
+                All expired positions were automatically filtered out. Click "Refresh Announcements" to check for newly published opportunities.
               </div>
             </div>
           ) : (
@@ -605,23 +605,23 @@ export default function NoticesView() {
           )}
         </div>
 
-        {/* Right Column: Base62 URL Shortener Tool & Crawler Architecture */}
+        {/* Right Column: Link Shortener Tool & Internship Advisory */}
         <div style={styles.sidebarColumn}>
-          {/* Base62 URL Shortener Interactive Tool */}
+          {/* Shareable Link Shortener Tool */}
           <div className="sis-card" style={{ marginBottom: '24px' }}>
             <div className="sis-card-header">
               <div>
-                <h3>Base62 URL Shortener</h3>
+                <h3>Quick Link Shortener</h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  System Design Component 7 &bull; Upstash Cloud Redis
+                  Generate compact shareable links for academic resources
                 </span>
               </div>
-              <span className="chip chip-purple">Live API</span>
+              <span className="chip chip-info">Tool</span>
             </div>
             <div className="sis-card-body">
               <form onSubmit={handleShorten}>
                 <div className="form-group">
-                  <label className="form-label">Long Application URL</label>
+                  <label className="form-label">Long Resource URL</label>
                   <input
                     type="url"
                     required
@@ -639,7 +639,7 @@ export default function NoticesView() {
                   style={{ width: '100%', padding: '10px' }}
                 >
                   <Link2 size={15} />
-                  <span>{shortening ? 'Encoding in Base62...' : 'Generate Short Link'}</span>
+                  <span>{shortening ? 'Generating Link...' : 'Generate Short Link'}</span>
                 </button>
               </form>
 
@@ -647,7 +647,7 @@ export default function NoticesView() {
                 <div style={styles.shortResultBox} className="animate-fade-in">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#065F46' }}>
-                      BASE62 ENCODED SHORT URL
+                      OFFICIAL SHAREABLE LINK
                     </span>
                     <button
                       type="button"
@@ -669,31 +669,31 @@ export default function NoticesView() {
                     <ExternalLink size={12} style={{ display: 'inline', marginLeft: '6px' }} />
                   </a>
                   <div style={{ fontSize: '0.7rem', color: '#047857', marginTop: '6px' }}>
-                    Stored in Upstash Cloud Redis &bull; 301 Permanent Redirect
+                    Official Shareable Link &bull; Instant Direct Access
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Web Crawler Architecture Card */}
+          {/* Student Internship Advisory Card */}
           <div className="sis-card">
             <div className="sis-card-header">
               <div>
-                <h3>Web Crawler Architecture</h3>
+                <h3>Student Application Advisory</h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                  Component 6 &bull; Real-time Job Scraping
+                  Guidelines for Academic &amp; Industrial Internships
                 </span>
               </div>
-              <span className="chip chip-success">Scheduled</span>
+              <span className="chip chip-info">Guidance</span>
             </div>
             <div className="sis-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.82rem' }}>
               <div style={styles.archRow}>
                 <div style={styles.archIconBox}><GlobeIcon /></div>
                 <div>
-                  <strong>Live Multi-Source Ingestion</strong>
+                  <strong>Official Direct Applications</strong>
                   <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
-                    Connects to public tech job board APIs and tier-1 engineering career portals.
+                    All postings direct students to the company's verified primary career portal.
                   </div>
                 </div>
               </div>
@@ -701,9 +701,9 @@ export default function NoticesView() {
               <div style={styles.archRow}>
                 <div style={styles.archIconBox}><Cpu size={16} color="#8B5CF6" /></div>
                 <div>
-                  <strong>Department Classification</strong>
+                  <strong>Department Eligibility</strong>
                   <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
-                    Automated tagging by engineering discipline (CSE, ECE, EEE, MECH).
+                    Verify credit requirements and semester eligibility with your departmental faculty mentor.
                   </div>
                 </div>
               </div>
@@ -711,9 +711,9 @@ export default function NoticesView() {
               <div style={styles.archRow}>
                 <div style={styles.archIconBox}><ShieldCheck size={16} color="#10B981" /></div>
                 <div>
-                  <strong>Strict Expiration Filter</strong>
+                  <strong>Bona Fide Endorsements</strong>
                   <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
-                    Only upcoming internships are displayed. Finished/expired listings are automatically pruned.
+                    Download certified transcripts and No Objection Certificates (NOC) from the Registrar portal.
                   </div>
                 </div>
               </div>
@@ -721,9 +721,9 @@ export default function NoticesView() {
               <div style={styles.archRow}>
                 <div style={styles.archIconBox}><Link2 size={16} color="#F59E0B" /></div>
                 <div>
-                  <strong>Original Link Preservation</strong>
+                  <strong>Strict Deadline Compliance</strong>
                   <div style={{ color: '#64748B', fontSize: '0.75rem' }}>
-                    Students are directly routed to the official application form on the hiring company's website.
+                    Submit applications prior to published closing dates to ensure university attendance allowances.
                   </div>
                 </div>
               </div>

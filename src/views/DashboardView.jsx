@@ -180,7 +180,7 @@ export default function DashboardView({ onNavigate }) {
           </div>
           <div className="stat-value">{notices.length || 0}</div>
           <div className="stat-meta">
-            <span className="chip chip-warning">Web Crawler Feed</span>
+            <span className="chip chip-warning">Official Notices</span>
           </div>
         </div>
       </div>
@@ -387,7 +387,7 @@ export default function DashboardView({ onNavigate }) {
             <div className="sis-card-header">
               <div>
                 <h3>Recent Notifications</h3>
-                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Official circulars & Web Crawler alerts</span>
+                <span style={{ fontSize: '0.75rem', color: '#64748B' }}>Official circulars &amp; campus updates</span>
               </div>
               <button
                 onClick={() => onNavigate && onNavigate('notifications')}

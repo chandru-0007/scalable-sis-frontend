@@ -117,34 +117,33 @@ export default function AuthView() {
 
         <div style={styles.brandContent}>
           <h1 style={styles.brandHeadline}>
-            One portal for every academic service.
+            Student Information System
           </h1>
           <p style={styles.brandSubhead}>
-            Register for courses, track attendance, view grades and timetables —
-            provisioned securely by university administration.
+            Unified portal for course registration, academic progress, and official campus schedules.
           </p>
 
           <div style={styles.featureList}>
             <div style={styles.featureItem}>
-              <div style={{ ...styles.featureIcon, backgroundColor: '#DCFCE7', border: '1px solid #86EFAC' }}>
-                <ShieldCheck size={18} color="#15803D" />
+              <div style={{ ...styles.featureIcon, backgroundColor: '#EFF6FF', border: '1px solid #BAE6FD' }}>
+                <GraduationCap size={18} color="#0284C7" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Admin-Provisioned Accounts</div>
+                <div style={styles.featureTitle}>Course &amp; Degree Planning</div>
                 <div style={styles.featureDesc}>
-                  Credentials issued by Registrar with automatic Resend email notifications.
+                  Register for semester electives, review prerequisites, and track degree credits.
                 </div>
               </div>
             </div>
 
             <div style={styles.featureItem}>
-              <div style={{ ...styles.featureIcon, backgroundColor: '#EFF6FF', border: '1px solid #BAE6FD' }}>
-                <Search size={18} color="#0284C7" />
+              <div style={{ ...styles.featureIcon, backgroundColor: '#DCFCE7', border: '1px solid #86EFAC' }}>
+                <Search size={18} color="#15803D" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Instant course &amp; student search</div>
+                <div style={styles.featureTitle}>Instant Academic Search</div>
                 <div style={styles.featureDesc}>
-                  In-memory Prefix Trie autocomplete delivers suggestions in under 6 milliseconds.
+                  Explore university curricula, faculty directories, and course catalogs with live seat availability.
                 </div>
               </div>
             </div>
@@ -154,9 +153,9 @@ export default function AuthView() {
                 <KeyRound size={18} color="#D97706" />
               </div>
               <div>
-                <div style={styles.featureTitle}>Redis Key-Value OTP Recovery</div>
+                <div style={styles.featureTitle}>Self-Service Account Access</div>
                 <div style={styles.featureDesc}>
-                  High-speed 10-minute TTL OTP verification for instant self-service password reset.
+                  Secure password resets and credential recovery with verification delivered directly to your inbox.
                 </div>
               </div>
             </div>
@@ -164,9 +163,9 @@ export default function AuthView() {
         </div>
 
         <div style={styles.brandFooter}>
-          <span>Scalable System Design Mini Project</span>
-          <span>•</span>
-          <span>Java 24 + Redis + MongoDB Atlas</span>
+          <span>University Academic Portal</span>
+          <span>&bull;</span>
+          <span>Official Student &amp; Faculty Services</span>
         </div>
       </div>
 
@@ -265,42 +264,33 @@ export default function AuthView() {
                 {loading ? <span className="spinner" /> : 'Sign in to Portal'}
               </button>
 
-              {/* Informational Provisioning Pill */}
-              <div style={styles.adminProvisionNotice}>
-                <ShieldCheck size={14} color="#0369A1" />
-                <span>Accounts are provisioned by Administration. Check your email for initial credentials.</span>
-              </div>
-
-              {/* Rate limit warning box */}
-              <div style={styles.rateLimitNotice}>
-                <Zap size={14} color="#D97706" />
-                <span>Protected by Redis Token Bucket Rate Limiting: 5 attempts/min.</span>
-              </div>
-
-              {/* Quick Viva Demo Credentials */}
+              {/* Quick Persona Access for Testing */}
               <div style={styles.demoBox}>
-                <div style={styles.demoTitle}>QUICK VIVA DEMO CREDENTIALS:</div>
+                <div style={styles.demoTitle}>QUICK DEMO ROLES:</div>
                 <div style={styles.demoGrid}>
                   <button
                     type="button"
                     onClick={() => switchDemoRole('STUDENT')}
                     style={styles.demoBtn}
+                    title="Sign in as Student (Chandru S)"
                   >
-                    👨‍🎓 Student: Chandru S (22CS014)
+                    👨‍🎓 Student: Chandru S
                   </button>
                   <button
                     type="button"
                     onClick={() => switchDemoRole('FACULTY')}
                     style={styles.demoBtn}
+                    title="Sign in as Faculty (Dr. Ramanathan)"
                   >
-                    👨‍🏫 Faculty: Dr. Ramanathan (FAC001)
+                    👨‍🏫 Faculty: Dr. Ramanathan
                   </button>
                   <button
                     type="button"
                     onClick={() => switchDemoRole('ADMIN')}
                     style={styles.demoBtn}
+                    title="Sign in as Registrar Admin"
                   >
-                    🏛️ Registrar Admin (ADM001)
+                    🏛️ Registrar Admin
                   </button>
                 </div>
               </div>
@@ -621,65 +611,40 @@ const styles = {
     cursor: 'pointer',
     padding: 0,
   },
-  adminProvisionNotice: {
-    marginTop: '14px',
-    padding: '11px 16px',
-    borderRadius: '14px',
-    backgroundColor: '#F0F9FF',
-    border: '1px solid #BAE6FD',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    fontSize: '12px',
-    color: '#0369A1',
-    fontWeight: '500',
-    lineHeight: '1.4',
-  },
-  rateLimitNotice: {
-    marginTop: '10px',
-    padding: '11px 16px',
-    borderRadius: '14px',
-    backgroundColor: '#FEF3C7',
-    border: '1px solid #FDE68A',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    fontSize: '12px',
-    color: '#B45309',
-    fontWeight: '600',
-  },
   demoBox: {
-    marginTop: '22px',
-    paddingTop: '18px',
+    marginTop: '20px',
+    paddingTop: '16px',
     borderTop: '1px solid var(--glass-border)',
   },
   demoTitle: {
     fontSize: '11px',
     fontWeight: '700',
     color: 'var(--text-muted)',
-    letterSpacing: '0.07em',
-    marginBottom: '10px',
+    letterSpacing: '0.06em',
+    marginBottom: '8px',
   },
   demoGrid: {
     display: 'flex',
-    flexDirection: 'column',
     gap: '8px',
+    flexWrap: 'wrap',
   },
   demoBtn: {
-    padding: '9px 16px',
-    borderRadius: 'var(--radius-full)',
+    flex: '1 1 0',
+    minWidth: '100px',
+    padding: '8px 12px',
+    borderRadius: '12px',
     backgroundColor: 'var(--glass-bg)',
     backdropFilter: 'var(--glass-blur-subtle)',
     WebkitBackdropFilter: 'var(--glass-blur-subtle)',
     border: '1px solid var(--glass-border)',
     borderTop: '1.5px solid var(--glass-border-highlight)',
     color: 'var(--text-main)',
-    fontSize: '12.5px',
+    fontSize: '11.5px',
     fontWeight: '600',
     cursor: 'pointer',
-    textAlign: 'left',
+    textAlign: 'center',
     transition: 'all 180ms var(--spring-easing)',
-    boxShadow: '0 2px 8px rgba(100, 116, 139, 0.08), inset 0 1px 1px #FFFFFF',
+    boxShadow: '0 2px 6px rgba(100, 116, 139, 0.06)',
   },
   backBtn: {
     display: 'flex',

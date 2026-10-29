@@ -277,25 +277,8 @@ export default function Sidebar({ currentView, setCurrentView, mobileOpen, onClo
           })}
         </nav>
 
-        {/* Bottom Pinned Footer: Shard Indicator + User Profile */}
+        {/* Bottom Pinned Footer: User Profile */}
         <div style={styles.sidebarFooter}>
-          {/* Shard Indicator Pill */}
-          <div style={styles.shardInfoCard}>
-            <div style={styles.shardInfoTop}>
-              <Layers size={13} color="var(--primary-blue)" />
-              <span style={styles.shardLabel}>
-                {role === 'ADMIN' ? 'Infrastructure Routing' : 'Cluster Routing'}
-              </span>
-            </div>
-            <div style={styles.shardValue}>
-              {user?.targetShard || (role === 'ADMIN' ? 'sis_shard_0 (Master)' : 'sis_shard_1')}
-            </div>
-            <div style={styles.shardSub}>
-              {role === 'ADMIN' ? 'Primary Management Node' : 'Consistent Hash Ring (300 VNs)'}
-            </div>
-          </div>
-
-          {/* User Profile Card */}
           <div style={styles.userCard}>
             {/* Clickable Avatar with Camera Indicator */}
             <div

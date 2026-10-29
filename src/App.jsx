@@ -95,7 +95,7 @@ export default function App() {
               Loading SIS University Portal...
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '6px' }}>
-              Connecting to MongoDB Atlas Shards &amp; Upstash Cloud Redis
+              Connecting to university academic services...
             </div>
           </div>
         </div>

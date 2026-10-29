@@ -70,14 +70,14 @@ export default function Topbar({ onToggleMobileMenu }) {
 
       {/* Right: Telemetry + Cloud Status Pills + Theme Toggle + Role Switcher */}
       <div style={styles.actionsRight}>
-        {/* Real-Time Live SSE Stream Badge */}
+        {/* System Status Indicator */}
         <div
           style={{
             ...styles.pillStatus,
             backgroundColor: isConnected ? 'var(--success-bg)' : 'var(--warning-bg)',
             borderColor: isConnected ? 'var(--success-border)' : 'var(--warning-border)',
           }}
-          title={isConnected ? 'Server-Sent Events active. Live cluster streaming.' : 'SSE connecting...'}
+          title={isConnected ? `System Operational • ${telemetry.qps || 0} QPS • Connected to Academic Services` : 'Connecting to campus servers...'}
         >
           <span
             style={{
@@ -89,26 +89,8 @@ export default function Topbar({ onToggleMobileMenu }) {
             }}
           />
           <span style={{ color: isConnected ? 'var(--success)' : 'var(--warning)', fontWeight: '600', fontSize: '12px' }}>
-            {isConnected ? 'Live SSE' : 'Connecting'}
+            {isConnected ? 'System Operational' : 'Connecting'}
           </span>
-          <span style={{ color: 'var(--text-muted)', fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
-            {telemetry.qps} QPS
-          </span>
-        </div>
-
-        {/* MongoDB Atlas and Upstash Redis Cloud Pills (wrapped for responsive auto-collapse) */}
-        <div className="telemetry-cloud-pills" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* MongoDB Atlas Shard Pill */}
-          <div style={styles.pillAtlas} title="Connected to MongoDB Atlas Cloud Cluster with 3 Shards">
-            <Database size={13} color="var(--primary-blue)" />
-            <span>Atlas Sharded</span>
-          </div>
-
-          {/* Upstash Redis Cloud Pill */}
-          <div style={styles.pillRedis} title="Connected to Upstash Cloud Redis over TLS">
-            <Radio size={13} color="#9333EA" />
-            <span>Upstash TLS</span>
-          </div>
         </div>
 
         {/* Theme Toggle Button */}

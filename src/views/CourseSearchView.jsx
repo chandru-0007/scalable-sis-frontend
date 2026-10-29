@@ -148,7 +148,7 @@ export default function CourseSearchView() {
       addToast({
         type: 'success',
         title: 'Course Enrollment Confirmed',
-        message: `Registered for ${enrolledNames.join(', ')}. Data routed & persisted to ${assignedShard}.`,
+        message: `Successfully registered for ${enrolledNames.join(', ')}.`,
       });
 
       setSelectedCourses([]);
@@ -192,9 +192,9 @@ export default function CourseSearchView() {
       {/* ─── Top Header & Scope Tabs ─── */}
       <div style={styles.header}>
         <div>
-          <h2 style={styles.pageTitle}>Course Search & Registration</h2>
+          <h2 style={styles.pageTitle}>Course Catalog & Registration</h2>
           <p style={styles.pageSub}>
-            Prefix Trie Autocomplete &bull; Redis Cache &bull; Consistent Hash Sharding
+            Explore degree courses, review seat capacity, and manage semester enrollments
           </p>
         </div>
 
@@ -231,9 +231,9 @@ export default function CourseSearchView() {
               <X size={14} color="#64748B" />
             </button>
           )}
-          <span className="chip chip-success" style={{ gap: '4px' }}>
+          <span className="chip chip-info" style={{ gap: '4px' }}>
             <Sparkles size={12} />
-            <span>Trie &lt;6ms</span>
+            <span>Instant Search</span>
           </span>
         </div>
 
@@ -279,8 +279,7 @@ export default function CourseSearchView() {
           <strong>{filteredCourses.length}</strong> courses matched • showing active semester catalog
         </div>
         <div style={styles.metaRight}>
-          <span style={styles.metaTag}>⚡ 18 ms cache hit</span>
-          <span style={styles.metaTag}>🗄️ Shards sis_shard_0, 1, 2 queried</span>
+          <span style={styles.metaTag}>⚡ Real-Time Seat Availability</span>
         </div>
       </div>
 
@@ -479,7 +478,7 @@ export default function CourseSearchView() {
                     <div style={styles.drawerAlert}>
                       <AlertTriangle size={15} color="#D97706" style={{ flexShrink: 0 }} />
                       <div style={{ fontSize: '0.74rem', color: '#92400E' }}>
-                        Anti-Collision Engine active. Checks against your registered timetable before persisting to shard.
+                        Schedule Verification: Automatically checks for time slot conflicts against your registered timetable.
                       </div>
                     </div>
 
@@ -515,19 +514,19 @@ export default function CourseSearchView() {
                       </span>
                     </div>
                     <div style={styles.confirmItem}>
-                      <span style={styles.confirmLabel}>Registration ID (Snowflake 64-bit):</span>
+                      <span style={styles.confirmLabel}>Reference ID:</span>
                       <span style={styles.confirmValMono}>{confirmationData.enrollmentId}</span>
                     </div>
                     <div style={styles.confirmItem}>
-                      <span style={styles.confirmLabel}>Persisted Target Shard:</span>
-                      <span className="chip chip-purple" style={{ alignSelf: 'flex-start' }}>
-                        {confirmationData.assignedShard}
+                      <span style={styles.confirmLabel}>Enrollment Status:</span>
+                      <span className="chip chip-success" style={{ alignSelf: 'flex-start' }}>
+                        Confirmed
                       </span>
                     </div>
                     <div style={styles.confirmItem}>
-                      <span style={styles.confirmLabel}>Routing Latency:</span>
+                      <span style={styles.confirmLabel}>Verification:</span>
                       <span style={{ fontSize: '0.78rem', fontWeight: '600', color: '#10B981' }}>
-                        {confirmationData.timeTaken} (Consistent Hash Ring)
+                        Recorded in Academic Registry
                       </span>
                     </div>
                   </div>

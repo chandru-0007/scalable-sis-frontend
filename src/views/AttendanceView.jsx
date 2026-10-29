@@ -199,7 +199,7 @@ export default function AttendanceView() {
         <div>
           <h2 style={styles.title}>Attendance Tracking & Compliance</h2>
           <p style={styles.subtitle}>
-            75% University Minimum Requirement &bull; Live Redis Invalidation &bull; Faculty Batch Marking
+            Monitor semester attendance records and compliance with the 75% university minimum requirement.
           </p>
         </div>
 

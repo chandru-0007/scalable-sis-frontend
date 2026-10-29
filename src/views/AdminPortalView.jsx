@@ -524,8 +524,8 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
 
       addToast({
         type: 'success',
-        title: 'Faculty Onboarded!',
-        message: `${facName} registered. Snowflake ID: ${res.id}, Shard: ${res.targetShard}`,
+        title: 'Faculty Registered!',
+        message: `${facName} registered successfully. Staff ID: ${res.id}`,
       });
 
       setFacName('');
@@ -574,7 +574,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
       addToast({
         type: 'success',
         title: `${onboardRole} Account Created!`,
-        message: `${payload.name} (${payload.rollNumber}) provisioned on ${res.user?.targetShard || 'cluster'}. Credentials email dispatched via Brevo.`,
+        message: `${payload.name} (${payload.rollNumber}) provisioned successfully. Welcome credentials email dispatched.`,
       });
 
       // Clear input fields
@@ -759,9 +759,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
       {/* ─── Header & Main Tabs ─── */}
       <div style={styles.header}>
         <div>
-          <h2 className="admin-header-title" style={styles.title}>Academic Registrar & Administrator Command Center</h2>
+          <h2 className="admin-header-title" style={styles.title}>Registrar Administration</h2>
           <p style={styles.subtitle}>
-            Course Catalog &bull; Faculty Assignment &bull; Student Overrides &bull; Rescheduling &bull; Debarment Audits
+            Manage academic curricula, faculty allocations, course schedules, and student records.
           </p>
         </div>
 
@@ -898,13 +898,13 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
             <div className="sis-card-header">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <h3>Provision New University Account</h3>
+                  <h3>Provision University Account</h3>
                   <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                    Admin-exclusive user creation with automatic random password &amp; Brevo email dispatch
+                    Create institutional accounts for enrolled students and appointed faculty members.
                   </p>
                 </div>
-                <span className="chip chip-success" style={{ fontSize: '11px' }}>
-                  Brevo Active
+                <span className="chip chip-info" style={{ fontSize: '11px' }}>
+                  Official Roster
                 </span>
               </div>
             </div>
@@ -925,7 +925,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                     <span>Account Successfully Provisioned!</span>
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>
-                    User: <strong>{recentOnboardedUser.user?.name}</strong> ({recentOnboardedUser.user?.rollNumber}) &bull; Shard: <code>{recentOnboardedUser.user?.targetShard}</code>
+                    User: <strong>{recentOnboardedUser.user?.name}</strong> ({recentOnboardedUser.user?.rollNumber}) &bull; Role: <strong>{recentOnboardedUser.user?.role}</strong>
                   </div>
 
                   <div style={{ backgroundColor: 'var(--card-bg, #FFFFFF)', padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '12px' }}>
@@ -1147,7 +1147,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
               <div>
                 <h3>University User Registry</h3>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Showing {allUsersList.length} active students &amp; faculty across MongoDB Atlas Shards
+                  Showing {allUsersList.length} registered students &amp; faculty members
                 </p>
               </div>
 
@@ -1186,7 +1186,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                         <th style={{ padding: '10px 14px' }}>User</th>
                         <th style={{ padding: '10px 14px' }}>Role</th>
                         <th style={{ padding: '10px 14px' }}>Dept</th>
-                        <th style={{ padding: '10px 14px' }}>Shard Node</th>
+                        <th style={{ padding: '10px 14px' }}>Status</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1208,8 +1208,8 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                             {u.semester ? <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}> (S{u.semester})</span> : null}
                           </td>
                           <td style={{ padding: '10px 14px' }}>
-                            <span className="chip chip-neutral mono" style={{ fontSize: '11px' }}>
-                              {u.targetShard || u.assignedShard || 'sis_shard_0'}
+                            <span className="chip chip-success" style={{ fontSize: '10px' }}>
+                              Active
                             </span>
                           </td>
                         </tr>
@@ -1353,9 +1353,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
           {/* Left: Input Form */}
           <div className="sis-card">
             <div className="sis-card-header">
-              <h3>Intelligent Course Rescheduling Engine</h3>
+              <h3>Course Rescheduling</h3>
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                Evicts student timetable caches and dispatches automated circular alerts via Consistent Hashing.
+                Update lecture timings and classrooms with automated timetable sync and circular alerts.
               </p>
             </div>
             <div className="sis-card-body">
@@ -1588,9 +1588,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
           {/* Right: Reschedule Engine Pipeline Status */}
           <div className="sis-card">
             <div className="sis-card-header">
-              <h3>Reschedule Engine Pipeline Telemetry</h3>
+              <h3>Schedule Update Status</h3>
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                Verification of Redis cache evictions, Short URLs, and live broadcast events.
+                Confirmation of timetable synchronization and student notifications.
               </p>
             </div>
             <div className="sis-card-body">
@@ -1598,15 +1598,15 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                 <div style={styles.resultBox} className="animate-fade-in">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--success)' }}>
                     <CheckCircle size={20} />
-                    <span style={{ fontWeight: '600' }}>Schedule Mutation Committed Successfully</span>
+                    <span style={{ fontWeight: '600' }}>Schedule Updated Successfully</span>
                   </div>
 
                   <div style={styles.step}>
                     <Layers size={16} color="var(--primary-blue)" />
                     <div>
-                      <strong>Database Shard State:</strong>
+                      <strong>Curriculum Schedule:</strong>
                       <p style={styles.stepDesc}>
-                        Course document updated in MongoDB. Slot: <code>{rescheduleResult.newSchedule}</code>.
+                        Course timing updated to: <code>{rescheduleResult.newSchedule}</code>.
                       </p>
                     </div>
                   </div>
@@ -1614,9 +1614,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                   <div style={styles.step}>
                     <Clock size={16} color="var(--primary-blue)" />
                     <div>
-                      <strong>Redis Key-Value Cache Eviction:</strong>
+                      <strong>Student Timetable Sync:</strong>
                       <p style={styles.stepDesc}>
-                        Evicted cached timetables for {rescheduleResult.invalidatedStudentCaches || 0} enrolled students. Fresh loads read from MongoDB.
+                        Synchronized active weekly schedules for {rescheduleResult.invalidatedStudentCaches || 0} enrolled students.
                       </p>
                     </div>
                   </div>
@@ -1624,9 +1624,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                   <div style={styles.step}>
                     <Send size={16} color="var(--primary-blue)" />
                     <div>
-                      <strong>Academic Notice & Short URL Broadcast:</strong>
+                      <strong>Official Notice Dispatched:</strong>
                       <p style={styles.stepDesc}>
-                        Circular emitted via SSE. Short URL: <code>{rescheduleResult.shortUrl || 'Auto-generated Base62'}</code>
+                        Circular emitted to student feeds. Circular link: <code>{rescheduleResult.shortUrl || 'Published'}</code>
                       </p>
                     </div>
                   </div>
@@ -1704,8 +1704,8 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                         </div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <span className="chip chip-purple" style={{ fontSize: '11px' }}>
-                          Shard: {s.targetShard || 'sis_shard_1'}
+                        <span className="chip chip-neutral" style={{ fontSize: '11px' }}>
+                          {s.department || 'Enrolled'}
                         </span>
                       </div>
                     </div>
@@ -1739,7 +1739,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                       <span className="chip chip-info">Semester {selectedStudentForEnroll.semester}</span>
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Email: {selectedStudentForEnroll.email} &bull; Shard: {selectedStudentForEnroll.targetShard || 'sis_shard_1'}
+                      Email: {selectedStudentForEnroll.email} &bull; Department: {selectedStudentForEnroll.department || 'Computer Science'}
                     </div>
                   </div>
 
@@ -1841,9 +1841,9 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
           {/* Left: Onboard Faculty Member */}
           <div className="sis-card">
             <div className="sis-card-header">
-              <h3>Onboard New Academic Faculty Member</h3>
+              <h3>Register Academic Faculty Member</h3>
               <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)' }}>
-                Generates Twitter Snowflake ID and assigns physical shard node via Consistent Hash Ring.
+                Register faculty members and assign departmental profiles.
               </p>
             </div>
             <div className="sis-card-body">
@@ -1918,7 +1918,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                   style={{ width: '100%' }}
                 >
                   <UserPlus size={16} />
-                  {facSubmitting ? 'Onboarding & Routing Shards...' : 'Provision Faculty Account'}
+                  {facSubmitting ? 'Registering Faculty Member...' : 'Register Faculty Account'}
                 </button>
               </form>
             </div>
@@ -1961,8 +1961,8 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                         <span className="mono" style={{ fontWeight: '600' }}>{f.rollNumber}</span> &bull; {f.email} &bull; {f.department}
                       </div>
                     </div>
-                    <span className="chip chip-info" style={{ fontSize: '11px' }}>
-                      Shard: {f.targetShard || 'sis_shard_1'}
+                    <span className="chip chip-purple" style={{ fontSize: '11px' }}>
+                      {f.department || 'Faculty'}
                     </span>
                   </div>
                 ))
@@ -1989,7 +1989,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <RefreshCw size={13} className={loadingDebarred ? 'animate-spin' : ''} />
-              Re-audit Database
+              Re-audit Attendance
             </button>
           </div>
 
@@ -1997,7 +1997,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
             {loadingDebarred ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                 <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} />
-                Running live debarment compliance check across shards...
+                Auditing student course attendance compliance...
               </div>
             ) : debarredStudents.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
@@ -2112,7 +2112,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                     onChange={(e) => setNoticeContent(e.target.value)}
                     className="form-input"
                     rows={5}
-                    placeholder="Enter full notice body to be stored in MongoDB and indexed by the search system..."
+                    placeholder="Enter full notice content to be published to student and faculty portals..."
                     required
                   />
                 </div>
@@ -2286,7 +2286,7 @@ export default function AdminPortalView({ initialTab = 'courses', onNavigate }) 
                   Create New Academic Course
                 </h3>
                 <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Adds course to MongoDB catalog and indexes prefix tokens into Trie Autocomplete.
+                  Define a new semester course offering, syllabus credits, and room capacity.
                 </span>
               </div>
               <button onClick={() => setShowNewCourseModal(false)} style={styles.closeBtn}>

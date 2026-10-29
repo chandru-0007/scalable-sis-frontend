@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component {
             <h2 style={styles.title}>Something went wrong in the Portal</h2>
             <p style={styles.desc}>
               An unexpected UI error occurred while rendering this view.
-              Your data in MongoDB and Redis remains safe and persistent.
+              Your saved academic data remains safe and persistent.
             </p>
 
             {this.state.error && (

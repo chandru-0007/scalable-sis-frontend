@@ -230,7 +230,7 @@ export default function ParentPortalView() {
                 <div>
                   <h3>Enrolled Subjects & Attendance Breakdown</h3>
                   <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                    Real-time class logs retrieved from MongoDB Atlas Shards
+                    Real-time attendance tracking and academic performance
                   </span>
                 </div>
                 <span className="chip chip-success">
@@ -355,7 +355,7 @@ export default function ParentPortalView() {
                 <div>
                   <h3>Official University Circulars Broadcast to Ward</h3>
                   <span style={{ fontSize: '0.75rem', color: '#64748B' }}>
-                    Notifications delivered via Jsoup WebCrawlerService & Base62 URL Shortener
+                    Verified academic circulars, fee schedules, and examination announcements
                   </span>
                 </div>
                 <span className="chip chip-info">{noticeList.length} Broadcasts</span>
@@ -493,9 +493,9 @@ export default function ParentPortalView() {
               {/* Official Stamp & Verification Hash */}
               <div style={modalStyles.stampSection}>
                 <div style={modalStyles.securityBox}>
-                  <div style={{ fontSize: '0.68rem', color: '#64748B' }}>CRYPTOGRAPHIC SHARD VERIFICATION</div>
+                  <div style={{ fontSize: '0.68rem', color: '#64748B' }}>OFFICIAL ACADEMIC TRANSCRIPT VERIFICATION</div>
                   <div style={modalStyles.hashText}>
-                    RING-HASH: MD5_3A89F0E1 &bull; SHARD: sis_shard_1 &bull; UPSTASH TLS
+                    DIGITALLY SIGNED &bull; REGISTRAR SECURE CERTIFIED &bull; OFFICIAL INSTITUTIONAL COPY
                   </div>
                   <div style={{ fontSize: '0.65rem', color: '#94A3B8', marginTop: '2px' }}>
                     Generated on {new Date().toLocaleString()} &bull; Valid for Academic Session 2026-27

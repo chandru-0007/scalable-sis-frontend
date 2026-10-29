@@ -423,27 +423,10 @@ export default function FacultyPortalView({ activeSubTab }) {
         <div>
           <h2 style={styles.title}>Faculty Academic Command Center</h2>
           <p style={styles.subtitle}>
-            Assigned Courses &bull; Course Assignments &bull; Daily Attendance &bull; Gradebook &amp; Published Results
+            Manage assigned courses, record lecture attendance, assign student coursework, and publish semester grades.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {courses.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--bg-surface)', padding: '6px 12px', borderRadius: '10px', border: '1px solid var(--border)' }}>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-muted)' }}>Active Course:</span>
-              <select
-                value={selectedCourse}
-                onChange={(e) => selectCourse(e.target.value)}
-                className="form-input"
-                style={{ padding: '4px 8px', height: '30px', fontSize: '13px', fontWeight: '700', color: '#0284C7', border: '1px solid #BAE6FD', cursor: 'pointer' }}
-              >
-                {courses.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} — {c.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <div style={styles.facultyBadge}>
             <Briefcase size={15} color="#0284C7" />
             <span>{user?.name || 'Dr. A. Ramanathan'} &bull; {user?.rollNumber || 'FAC001'} &bull; Dept of {user?.department || 'CSE'}</span>
@@ -658,7 +641,7 @@ export default function FacultyPortalView({ activeSubTab }) {
                 <div>
                   <h3>Class Roster &bull; {selectedCourse}</h3>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    Official enrolled student list &bull; Real-time MongoDB Atlas Shard synchronization
+                    Official enrolled student list &bull; Active semester enrollment roster
                   </span>
                 </div>
                 <span className="chip chip-info">{roster.length} Enrolled</span>
