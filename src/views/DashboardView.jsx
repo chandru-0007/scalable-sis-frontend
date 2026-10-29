@@ -15,6 +15,7 @@ import {
   CheckCircle,
   FileText,
   Calendar,
+  Sparkles,
 } from 'lucide-react';
 
 export default function DashboardView({ onNavigate }) {
@@ -183,6 +184,55 @@ export default function DashboardView({ onNavigate }) {
             <span className="chip chip-warning">Official Notices</span>
           </div>
         </div>
+      </div>
+
+      {/* ─── 3D Scroll Animation Spotlight Banner ─── */}
+      <div
+        className="sis-card animate-fade-in"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '16px 20px',
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
+          border: '1px solid rgba(139, 92, 246, 0.25)',
+          borderRadius: 'var(--radius-squircle)',
+          marginBottom: '20px',
+          cursor: 'pointer',
+        }}
+        onClick={() => onNavigate && onNavigate('scroll-demo')}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)',
+            flexShrink: 0,
+          }}>
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-main)', letterSpacing: '-0.01em' }}>
+              3D Container Scroll Animation Showcase
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+              Interactive 3D perspective scroll effect powered by Framer Motion &amp; Aceternity UI.
+            </div>
+          </div>
+        </div>
+        <button
+          className="btn-primary"
+          style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
+          <span>Launch Showcase</span>
+          <ArrowRight size={14} />
+        </button>
       </div>
 
       {/* ─── 2. Main Two-Column Row (Timetable + Attendance & Notices) ─── */}
