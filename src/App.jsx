@@ -14,23 +14,22 @@ import AdminPortalView from './views/AdminPortalView';
 import ParentPortalView from './views/ParentPortalView';
 import AssignmentsView from './views/AssignmentsView';
 import ResultsView from './views/ResultsView';
-import { HeroScrollDemo } from './components/ui/demo';
 
 const ROLE_CONFIG = {
   STUDENT: {
-    allowedViews: ['dashboard', 'assignments', 'results', 'search', 'registration', 'attendance', 'timetable', 'notifications', 'scroll-demo'],
+    allowedViews: ['dashboard', 'assignments', 'results', 'search', 'registration', 'attendance', 'timetable', 'notifications'],
     defaultView: 'dashboard',
   },
   FACULTY: {
-    allowedViews: ['faculty', 'faculty-assignments', 'faculty-attendance', 'faculty-grades', 'timetable', 'notifications', 'scroll-demo'],
+    allowedViews: ['faculty', 'faculty-assignments', 'faculty-attendance', 'faculty-grades', 'timetable', 'notifications'],
     defaultView: 'faculty',
   },
   ADMIN: {
-    allowedViews: ['admin', 'admin-onboard', 'admin-reschedule', 'admin-faculty', 'admin-debarment', 'system', 'notifications', 'scroll-demo'],
+    allowedViews: ['admin', 'admin-onboard', 'admin-reschedule', 'admin-faculty', 'admin-debarment', 'system', 'notifications'],
     defaultView: 'admin-onboard',
   },
   PARENT: {
-    allowedViews: ['parent', 'notifications', 'scroll-demo'],
+    allowedViews: ['parent', 'notifications'],
     defaultView: 'parent',
   },
 };
@@ -39,6 +38,17 @@ export default function App() {
   const { user, isAuthenticated, loading, refreshProfile } = useAuth();
   const role = (user?.role || 'STUDENT').toUpperCase();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  const handleMainScroll = (e) => {
+    const el = e.currentTarget;
+    const total = el.scrollHeight - el.clientHeight;
+    if (total > 0) {
+      setScrollProgress(Math.min(100, Math.max(0, (el.scrollTop / total) * 100)));
+    } else {
+      setScrollProgress(0);
+    }
+  };
 
   const [currentView, setCurrentView] = useState(() => {
     const hash = window.location.hash.replace('#', '').trim();
@@ -122,7 +132,21 @@ export default function App() {
           />
 
           {/* Main Content Area */}
-          <div style={styles.mainContent} className="sis-main-content">
+          <div
+            style={styles.mainContent}
+            className="sis-main-content"
+            onScroll={handleMainScroll}
+          >
+            {/* Ambient Dynamic Scroll Progress Glow Bar */}
+            <div
+              className="sis-scroll-progress-bar"
+              style={{
+                width: `${scrollProgress}%`,
+                opacity: scrollProgress > 0.5 ? 1 : 0,
+              }}
+              aria-hidden="true"
+            />
+
             <Topbar onToggleMobileMenu={() => setMobileMenuOpen((prev) => !prev)} />
 
             <main style={styles.viewContainer} className="sis-view-container">
@@ -155,40 +179,6 @@ export default function App() {
 
                 {/* University Notices (Accessible to all roles) */}
                 {currentView === 'notifications' && <NoticesView />}
-
-                {/* 3D Container Scroll Animation Showcase */}
-                {currentView === 'scroll-demo' && (
-                  <div style={{ width: '100%', paddingBottom: '60px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '16px 24px',
-                      background: 'var(--glass-bg)',
-                      backdropFilter: 'var(--glass-blur)',
-                      borderRadius: 'var(--radius-squircle)',
-                      border: '1px solid var(--glass-border)',
-                      marginBottom: '20px',
-                    }}>
-                      <div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-main)', margin: 0 }}>
-                          3D Container Scroll Animation
-                        </h2>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                          Interactive 3D perspective scrolling effect powered by framer-motion.
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => handleNavigate('dashboard')}
-                        className="btn-secondary"
-                        style={{ padding: '8px 18px', borderRadius: '10px', fontSize: '13px', cursor: 'pointer' }}
-                      >
-                        &larr; Back to Dashboard
-                      </button>
-                    </div>
-                    <HeroScrollDemo />
-                  </div>
-                )}
               </div>
             </main>
           </div>

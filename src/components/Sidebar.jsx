@@ -28,7 +28,6 @@ import {
   Eye,
   EyeOff,
   UserPlus,
-  Sparkles,
 } from 'lucide-react';
 
 const PRESET_AVATARS = [
@@ -60,7 +59,6 @@ const ROLE_NAV = {
       { id: 'attendance', label: 'Attendance', icon: CalendarCheck },
       { id: 'timetable', label: 'Timetable', icon: CalendarDays },
       { id: 'notifications', label: 'Notifications', icon: BellRing },
-      { id: 'scroll-demo', label: '3D Scroll Animation', icon: Sparkles },
     ],
   },
   FACULTY: {
@@ -72,7 +70,6 @@ const ROLE_NAV = {
       { id: 'faculty-grades', label: 'Gradebook & Results', icon: Award },
       { id: 'timetable', label: 'Faculty Timetable', icon: CalendarDays },
       { id: 'notifications', label: 'Announcements', icon: BellRing },
-      { id: 'scroll-demo', label: '3D Scroll Animation', icon: Sparkles },
     ],
   },
   ADMIN: {
@@ -85,7 +82,6 @@ const ROLE_NAV = {
       { id: 'admin-debarment', label: 'Debarment Audits', icon: Users },
       { id: 'system', label: 'System Monitor', icon: Activity, highlight: true },
       { id: 'notifications', label: 'Notices & Circulars', icon: BellRing },
-      { id: 'scroll-demo', label: '3D Scroll Animation', icon: Sparkles },
     ],
   },
   PARENT: {
@@ -93,7 +89,6 @@ const ROLE_NAV = {
     items: [
       { id: 'parent', label: 'Ward Academic Progress', icon: Users },
       { id: 'notifications', label: 'University Notices', icon: BellRing },
-      { id: 'scroll-demo', label: '3D Scroll Animation', icon: Sparkles },
     ],
   },
 };
