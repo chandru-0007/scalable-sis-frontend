@@ -77,11 +77,11 @@ const RESCHEDULE_REASONS = [
   'Elective clash elimination for core department batch',
 ];
 
-export default function AdminPortalView({ initialTab = 'onboard', onNavigate }) {
+export default function AdminPortalView({ initialTab = 'courses', onNavigate }) {
   const { addToast } = useRealtime();
 
-  // Active Tab: 'onboard' | 'courses' | 'reschedule' | 'students' | 'faculty' | 'debarred' | 'broadcast'
-  const [activeTab, setActiveTab] = useState(initialTab || 'onboard');
+  // Active Tab: 'courses' | 'onboard' | 'reschedule' | 'students' | 'faculty' | 'debarred' | 'broadcast'
+  const [activeTab, setActiveTab] = useState(initialTab || 'courses');
 
   useEffect(() => {
     if (initialTab) {
@@ -767,16 +767,6 @@ export default function AdminPortalView({ initialTab = 'onboard', onNavigate }) 
 
         <div className="admin-tabs-bar" style={styles.tabs}>
           <button
-            onClick={() => handleTabSwitch('onboard')}
-            style={{
-              ...styles.tabBtn,
-              ...(activeTab === 'onboard' ? styles.tabBtnActive : {}),
-            }}
-          >
-            <UserPlus size={14} style={{ display: 'inline', marginRight: '6px' }} />
-            Onboard Users
-          </button>
-          <button
             onClick={() => handleTabSwitch('courses')}
             style={{
               ...styles.tabBtn,
@@ -785,6 +775,16 @@ export default function AdminPortalView({ initialTab = 'onboard', onNavigate }) 
           >
             <BookOpen size={14} style={{ display: 'inline', marginRight: '6px' }} />
             Course Catalog
+          </button>
+          <button
+            onClick={() => handleTabSwitch('onboard')}
+            style={{
+              ...styles.tabBtn,
+              ...(activeTab === 'onboard' ? styles.tabBtnActive : {}),
+            }}
+          >
+            <UserPlus size={14} style={{ display: 'inline', marginRight: '6px' }} />
+            Onboard Users
           </button>
           <button
             onClick={() => handleTabSwitch('reschedule')}

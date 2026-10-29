@@ -34,7 +34,6 @@ export default function AuthView() {
   const [forgotNewPass, setForgotNewPass] = useState('');
   const [forgotConfirmPass, setForgotConfirmPass] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [demoOtpHint, setDemoOtpHint] = useState(null);
 
   async function handleLoginSubmit(e) {
     e.preventDefault();
@@ -62,9 +61,6 @@ export default function AuthView() {
       const res = await api.auth.sendForgotPasswordOtp(forgotEmail.trim());
       setOtpSent(true);
       setSuccessMsg(`Verification code sent to ${res.email || forgotEmail}. Check your inbox!`);
-      if (res.demoOtp) {
-        setDemoOtpHint(res.demoOtp);
-      }
     } catch (err) {
       setError(err.message || 'Failed to send verification code. Please check your email.');
     } finally {
@@ -353,11 +349,6 @@ export default function AuthView() {
                   <div style={{ backgroundColor: '#F0F9FF', border: '1px solid #BAE6FD', padding: '12px 16px', borderRadius: '12px', marginBottom: '18px' }}>
                     <div style={{ fontSize: '12px', color: '#0369A1', fontWeight: '600' }}>RECIPIENT</div>
                     <div style={{ fontSize: '14px', color: '#0C4A6E', fontWeight: '700' }}>{forgotEmail}</div>
-                    {demoOtpHint && (
-                      <div style={{ marginTop: '6px', fontSize: '12px', color: '#0284C7' }}>
-                        Demo OTP Hint: <strong style={{ letterSpacing: '2px' }}>{demoOtpHint}</strong>
-                      </div>
-                    )}
                   </div>
 
                   <div className="form-group">

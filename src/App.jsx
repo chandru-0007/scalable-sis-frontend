@@ -142,7 +142,7 @@ export default function App() {
                 {currentView === 'faculty-grades' && <FacultyPortalView activeSubTab="grades" onNavigate={handleNavigate} />}
 
                 {/* Admin Persona Views */}
-                {currentView === 'admin' && <AdminPortalView initialTab="onboard" onNavigate={handleNavigate} />}
+                {currentView === 'admin' && <AdminPortalView initialTab="courses" onNavigate={handleNavigate} />}
                 {currentView === 'admin-onboard' && <AdminPortalView initialTab="onboard" onNavigate={handleNavigate} />}
                 {currentView === 'admin-reschedule' && <AdminPortalView initialTab="reschedule" onNavigate={handleNavigate} />}
                 {currentView === 'admin-faculty' && <AdminPortalView initialTab="faculty" onNavigate={handleNavigate} />}
