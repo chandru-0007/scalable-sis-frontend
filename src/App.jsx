@@ -38,15 +38,19 @@ export default function App() {
   const { user, isAuthenticated, loading, refreshProfile } = useAuth();
   const role = (user?.role || 'STUDENT').toUpperCase();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollBarRef = React.useRef(null);
 
   const handleMainScroll = (e) => {
+    if (!scrollBarRef.current) return;
     const el = e.currentTarget;
     const total = el.scrollHeight - el.clientHeight;
     if (total > 0) {
-      setScrollProgress(Math.min(100, Math.max(0, (el.scrollTop / total) * 100)));
+      const pct = Math.min(100, Math.max(0, (el.scrollTop / total) * 100));
+      scrollBarRef.current.style.width = pct + '%';
+      scrollBarRef.current.style.opacity = pct > 0.5 ? '1' : '0';
     } else {
-      setScrollProgress(0);
+      scrollBarRef.current.style.width = '0%';
+      scrollBarRef.current.style.opacity = '0';
     }
   };
 
@@ -137,13 +141,10 @@ export default function App() {
             className="sis-main-content"
             onScroll={handleMainScroll}
           >
-            {/* Ambient Dynamic Scroll Progress Glow Bar */}
+            {/* Ambient Dynamic Scroll Progress Glow Bar (Hardware-accelerated DOM updates) */}
             <div
+              ref={scrollBarRef}
               className="sis-scroll-progress-bar"
-              style={{
-                width: `${scrollProgress}%`,
-                opacity: scrollProgress > 0.5 ? 1 : 0,
-              }}
               aria-hidden="true"
             />
 

@@ -23,19 +23,28 @@ export default function AttendanceView() {
   const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
   const isStudent = user?.role === 'STUDENT' || !user?.role;
 
+  const studentId = user?.studentId || user?.id || user?.rollNumber;
+  const cacheKey = studentId ? `sis_dash_cache_${studentId}` : null;
+  const initialEnrollments = (() => {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? (JSON.parse(raw).enrollments || []) : [];
+    } catch {
+      return [];
+    }
+  })();
+
   const [activeTab, setActiveTab] = useState(user?.role === 'FACULTY' ? 'faculty' : 'student'); // 'student' | 'faculty'
-  const [enrollments, setEnrollments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [enrollments, setEnrollments] = useState(initialEnrollments);
+  const [loading, setLoading] = useState(initialEnrollments.length === 0);
 
   // Debarment Simulator State
-  const [simCourseCode, setSimCourseCode] = useState('');
+  const [simCourseCode, setSimCourseCode] = useState(() => initialEnrollments[0]?.courseCode || '');
   const [classesToAttend, setClassesToAttend] = useState(4);
   const [classesToMiss, setClassesToMiss] = useState(0);
 
-  const studentId = user?.studentId || user?.id || user?.rollNumber;
-
   async function loadAttendanceData() {
-    setLoading(true);
+    if (enrollments.length === 0) setLoading(true);
     try {
       if (studentId) {
         const res = await api.students.getEnrollments(studentId);

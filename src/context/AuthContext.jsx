@@ -4,9 +4,20 @@ import { api } from '../api';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('sis_session_token') || null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('sis_user_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(() => {
+    const storedToken = localStorage.getItem('sis_session_token');
+    const storedUser = localStorage.getItem('sis_user_profile');
+    return !!(storedToken && !storedUser);
+  });
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -16,7 +27,9 @@ export function AuthProvider({ children }) {
         try {
           const res = await api.auth.getMe();
           if (res.status === 'SUCCESS' && (res.student || res.user)) {
-            setUser(res.student || res.user);
+            const profile = res.student || res.user;
+            setUser(profile);
+            localStorage.setItem('sis_user_profile', JSON.stringify(profile));
           } else {
             logout();
           }
@@ -43,6 +56,7 @@ export function AuthProvider({ children }) {
         setToken(res.token);
         const profile = res.student || res.user;
         setUser(profile);
+        localStorage.setItem('sis_user_profile', JSON.stringify(profile));
         return profile;
       } else {
         throw new Error(res.message || 'Login failed');
@@ -83,6 +97,7 @@ export function AuthProvider({ children }) {
 
   function logout() {
     localStorage.removeItem('sis_session_token');
+    localStorage.removeItem('sis_user_profile');
     setToken(null);
     setUser(null);
     try {
@@ -180,6 +195,7 @@ export function AuthProvider({ children }) {
         if (res.status === 'SUCCESS' && (res.student || res.user)) {
           const profile = res.student || res.user;
           setUser(profile);
+          localStorage.setItem('sis_user_profile', JSON.stringify(profile));
           return profile;
         }
       } catch (err) {

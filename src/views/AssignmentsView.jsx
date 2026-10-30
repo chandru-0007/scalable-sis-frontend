@@ -22,8 +22,20 @@ export default function AssignmentsView() {
   const { user } = useAuth();
   const { addToast } = useRealtime();
 
-  const [assignments, setAssignments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const studentIdentifier = user?.studentId || user?.id || user?.rollNumber || '22CS014';
+  const cacheKey = studentIdentifier ? `sis_assign_cache_${studentIdentifier}` : null;
+  const initialCache = React.useMemo(() => {
+    if (!cacheKey) return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [cacheKey]);
+
+  const [assignments, setAssignments] = useState(() => initialCache || []);
+  const [loading, setLoading] = useState(() => !initialCache);
   const [filterCourse, setFilterCourse] = useState('ALL');
   const [filterStatus, setFilterStatus] = useState('ALL'); // ALL, PENDING, SUBMITTED, GRADED
 
@@ -34,25 +46,35 @@ export default function AssignmentsView() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
-  const studentIdentifier = user?.studentId || user?.id || user?.rollNumber || '22CS014';
+  useEffect(() => {
+    if (initialCache && assignments.length === 0 && initialCache.length > 0) {
+      setAssignments(initialCache);
+      setLoading(false);
+    }
+  }, [initialCache]);
 
   useEffect(() => {
     loadAssignments();
   }, [user]);
 
   async function loadAssignments() {
-    setLoading(true);
+    if (assignments.length === 0) setLoading(true);
     try {
       const res = await api.assignments.getAllForStudent(studentIdentifier);
       if (Array.isArray(res)) {
         setAssignments(res);
+        if (cacheKey) localStorage.setItem(cacheKey, JSON.stringify(res));
       } else {
         // Fallback demo assignments if offline
-        setAssignments(getFallbackAssignments());
+        const fallback = getFallbackAssignments();
+        setAssignments(fallback);
+        if (cacheKey) localStorage.setItem(cacheKey, JSON.stringify(fallback));
       }
     } catch (err) {
       console.warn('Failed to fetch assignments from API, loading fallback:', err);
-      setAssignments(getFallbackAssignments());
+      if (assignments.length === 0) {
+        setAssignments(getFallbackAssignments());
+      }
     } finally {
       setLoading(false);
     }
@@ -217,7 +239,13 @@ export default function AssignmentsView() {
             <FileText size={22} />
           </div>
           <div>
-            <div style={styles.kpiValue}>{totalCount}</div>
+            <div style={styles.kpiValue}>
+              {loading && assignments.length === 0 ? (
+                <span className="skeleton-pulse" style={{ display: 'inline-block', width: '38px', height: '28px', borderRadius: '6px' }} />
+              ) : (
+                totalCount
+              )}
+            </div>
             <div style={styles.kpiLabel}>Total Assigned</div>
           </div>
         </div>
@@ -227,7 +255,13 @@ export default function AssignmentsView() {
             <Clock size={22} />
           </div>
           <div>
-            <div style={styles.kpiValue}>{pendingCount}</div>
+            <div style={styles.kpiValue}>
+              {loading && assignments.length === 0 ? (
+                <span className="skeleton-pulse" style={{ display: 'inline-block', width: '38px', height: '28px', borderRadius: '6px' }} />
+              ) : (
+                pendingCount
+              )}
+            </div>
             <div style={styles.kpiLabel}>Pending Submission</div>
           </div>
         </div>
@@ -237,7 +271,13 @@ export default function AssignmentsView() {
             <FileCheck size={22} />
           </div>
           <div>
-            <div style={styles.kpiValue}>{submittedCount}</div>
+            <div style={styles.kpiValue}>
+              {loading && assignments.length === 0 ? (
+                <span className="skeleton-pulse" style={{ display: 'inline-block', width: '38px', height: '28px', borderRadius: '6px' }} />
+              ) : (
+                submittedCount
+              )}
+            </div>
             <div style={styles.kpiLabel}>Under Review</div>
           </div>
         </div>
@@ -247,7 +287,13 @@ export default function AssignmentsView() {
             <Award size={22} />
           </div>
           <div>
-            <div style={styles.kpiValue}>{gradedCount}</div>
+            <div style={styles.kpiValue}>
+              {loading && assignments.length === 0 ? (
+                <span className="skeleton-pulse" style={{ display: 'inline-block', width: '38px', height: '28px', borderRadius: '6px' }} />
+              ) : (
+                gradedCount
+              )}
+            </div>
             <div style={styles.kpiLabel}>Evaluated &amp; Graded</div>
           </div>
         </div>

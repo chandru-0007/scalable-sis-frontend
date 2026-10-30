@@ -30,10 +30,24 @@ export default function TimetableWeeklyView() {
   const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
   const studentId = user?.studentId || user?.id || user?.rollNumber;
   const userKey = `${studentId || ''}_${user?.role || ''}_${user?.rollNumber || ''}`;
+  const cacheKey = studentId ? `sis_dash_cache_${studentId}` : null;
+
+  useEffect(() => {
+    if (timetableSlots.length === 0 && cacheKey) {
+      try {
+        const raw = localStorage.getItem(cacheKey);
+        const cached = raw ? JSON.parse(raw).timetable : null;
+        if (Array.isArray(cached) && cached.length > 0) {
+          setTimetableSlots(cached);
+          setLoading(false);
+        }
+      } catch (e) {}
+    }
+  }, [cacheKey]);
 
   useEffect(() => {
     async function loadTimetable() {
-      setLoading(true);
+      if (timetableSlots.length === 0) setLoading(true);
       try {
         if (isFaculty) {
           const facultyId = user?.rollNumber || user?.facultyId || user?.id || 'FAC001';

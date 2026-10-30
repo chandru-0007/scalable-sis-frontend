@@ -19,13 +19,34 @@ import {
 
 export default function DashboardView({ onNavigate }) {
   const { user } = useAuth();
-  const [enrollments, setEnrollments] = useState([]);
-  const [timetable, setTimetable] = useState([]);
-  const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
-
   const isFaculty = user?.role === 'FACULTY' || user?.role === 'ADMIN';
   const studentId = user?.studentId || user?.id || user?.rollNumber;
+
+  // Stale-While-Revalidate Client Caching (Instant 0ms display on login)
+  const cacheKey = studentId ? `sis_dash_cache_${studentId}` : null;
+  const initialCache = React.useMemo(() => {
+    if (!cacheKey) return null;
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, [cacheKey]);
+
+  const [enrollments, setEnrollments] = useState(() => initialCache?.enrollments || []);
+  const [timetable, setTimetable] = useState(() => initialCache?.timetable || []);
+  const [notices, setNotices] = useState(() => initialCache?.notices || []);
+  const [loading, setLoading] = useState(() => !initialCache);
+
+  useEffect(() => {
+    if (initialCache && enrollments.length === 0 && initialCache.enrollments?.length > 0) {
+      setEnrollments(initialCache.enrollments);
+      setTimetable(initialCache.timetable || []);
+      setNotices(initialCache.notices || []);
+      setLoading(false);
+    }
+  }, [initialCache]);
 
   useEffect(() => {
     async function loadDashboardData() {
@@ -41,17 +62,36 @@ export default function DashboardView({ onNavigate }) {
           api.notices.getAll(),
         ]);
 
+        let freshEnrollments = null;
+        let freshTimetable = null;
+        let freshNotices = null;
+
         if (enrollRes.status === 'fulfilled' && enrollRes.value) {
           const eList = enrollRes.value.enrollments || (Array.isArray(enrollRes.value) ? enrollRes.value : []);
           setEnrollments(eList);
+          freshEnrollments = eList;
         }
         if (timetableRes.status === 'fulfilled' && timetableRes.value) {
           const tbList = timetableRes.value.timetable || (Array.isArray(timetableRes.value) ? timetableRes.value : []);
           setTimetable(tbList);
+          freshTimetable = tbList;
         }
         if (noticeRes.status === 'fulfilled' && noticeRes.value) {
           const ntList = noticeRes.value.notices || (Array.isArray(noticeRes.value) ? noticeRes.value : []);
-          if (ntList.length > 0) setNotices(ntList);
+          if (ntList.length > 0) {
+            setNotices(ntList);
+            freshNotices = ntList;
+          }
+        }
+
+        // Persist fresh data to SWR local cache
+        if (cacheKey) {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            enrollments: freshEnrollments || enrollments,
+            timetable: freshTimetable || timetable,
+            notices: freshNotices || notices,
+            cachedAt: Date.now(),
+          }));
         }
       } catch (err) {
         console.error('Failed to load dashboard:', err);
@@ -129,9 +169,17 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Courses Enrolled</span>
             <BookOpen size={18} color="#10B981" />
           </div>
-          <div className="stat-value">{enrollments.length}</div>
+          <div className="stat-value">
+            {loading && enrollments.length === 0 ? (
+              <span className="skeleton-pulse" style={{ display: 'inline-block', width: '56px', height: '36px', borderRadius: '8px' }} />
+            ) : (
+              enrollments.length
+            )}
+          </div>
           <div className="stat-meta">
-            {enrollments.length === 0 ? (
+            {loading && enrollments.length === 0 ? (
+              <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Loading courses...</span>
+            ) : enrollments.length === 0 ? (
               <span className="chip chip-neutral">0 courses registered</span>
             ) : (
               <span className="chip chip-success">{enrollments.length} active courses</span>
@@ -144,9 +192,17 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Overall Attendance</span>
             <CalendarCheck size={18} color="#10B981" />
           </div>
-          <div className="stat-value">{overallAttendanceStr}</div>
+          <div className="stat-value">
+            {loading && enrollments.length === 0 ? (
+              <span className="skeleton-pulse" style={{ display: 'inline-block', width: '72px', height: '36px', borderRadius: '8px' }} />
+            ) : (
+              overallAttendanceStr
+            )}
+          </div>
           <div className="stat-meta">
-            {enrollments.length === 0 ? (
+            {loading && enrollments.length === 0 ? (
+              <span style={{ color: '#94A3B8', fontSize: '0.75rem' }}>Loading metrics...</span>
+            ) : enrollments.length === 0 ? (
               <span style={{ color: '#64748B', fontSize: '0.75rem' }}>No courses enrolled</span>
             ) : (
               <span className="chip chip-success">Above 75% threshold</span>
@@ -164,7 +220,13 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Published Results &amp; CGPA</span>
             <Award size={18} color="#8B5CF6" />
           </div>
-          <div className="stat-value">{cgpaStr}</div>
+          <div className="stat-value">
+            {loading && enrollments.length === 0 ? (
+              <span className="skeleton-pulse" style={{ display: 'inline-block', width: '64px', height: '36px', borderRadius: '8px' }} />
+            ) : (
+              cgpaStr
+            )}
+          </div>
           <div className="stat-meta">
             <span className="chip chip-purple">Semester {user?.semester || 7}</span>
             <span style={{ color: '#0284C7', fontSize: '0.75rem', fontWeight: '600' }}>
@@ -178,7 +240,13 @@ export default function DashboardView({ onNavigate }) {
             <span className="stat-label">Pending Notices</span>
             <BellRing size={18} color="#F59E0B" />
           </div>
-          <div className="stat-value">{notices.length || 0}</div>
+          <div className="stat-value">
+            {loading && notices.length === 0 ? (
+              <span className="skeleton-pulse" style={{ display: 'inline-block', width: '48px', height: '36px', borderRadius: '8px' }} />
+            ) : (
+              notices.length || 0
+            )}
+          </div>
           <div className="stat-meta">
             <span className="chip chip-warning">Official Notices</span>
           </div>
@@ -277,6 +345,11 @@ export default function DashboardView({ onNavigate }) {
                       </div>
                     ))}
                   </div>
+                ) : loading && timetable.length === 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '10px 0' }}>
+                    <div style={{ height: '52px', borderRadius: '12px' }} className="skeleton-pulse" />
+                    <div style={{ height: '52px', borderRadius: '12px' }} className="skeleton-pulse" />
+                  </div>
                 ) : (
                   <div style={{ textAlign: 'center', padding: '24px 16px', color: '#64748B' }}>
                     <Clock size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
@@ -317,7 +390,12 @@ export default function DashboardView({ onNavigate }) {
               </button>
             </div>
             <div className="sis-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {enrollments.length === 0 ? (
+              {loading && enrollments.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '10px 0' }}>
+                  <div style={{ height: '46px', borderRadius: '12px' }} className="skeleton-pulse" />
+                  <div style={{ height: '46px', borderRadius: '12px' }} className="skeleton-pulse" />
+                </div>
+              ) : enrollments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '26px 16px', color: '#64748B' }}>
                   <CalendarCheck size={28} style={{ opacity: 0.35, marginBottom: '8px' }} />
                   <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '0.9rem' }}>
