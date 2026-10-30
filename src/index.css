@@ -1142,11 +1142,11 @@ textarea.form-input {
 
 /* ─── Butter-Smooth Inertial Scrolling & Momentum ─── */
 html, body {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 .sis-main-content {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
 }

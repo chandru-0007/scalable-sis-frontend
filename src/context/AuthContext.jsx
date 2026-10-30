@@ -137,7 +137,7 @@ export function AuthProvider({ children }) {
       console.warn('Demo switch login notice:', err);
       // Direct offline fallback for immediate demo switch
       if (role === 'STUDENT') {
-        setUser({
+        const p = {
           studentId: '371292355980038144',
           name: 'Chandru S',
           email: 'chandru@college.edu',
@@ -145,10 +145,12 @@ export function AuthProvider({ children }) {
           department: 'CSE',
           semester: 7,
           role: 'STUDENT',
-          targetShard: 'sis_shard_1',
-        });
+          targetShard: 'sis_shard_3',
+        };
+        setUser(p);
+        localStorage.setItem('sis_user_profile', JSON.stringify(p));
       } else if (role === 'FACULTY') {
-        setUser({
+        const p = {
           studentId: '371292357410295808',
           name: 'Dr. A. Ramanathan',
           email: 'ramanathan@college.edu',
@@ -156,9 +158,11 @@ export function AuthProvider({ children }) {
           department: 'CSE',
           role: 'FACULTY',
           targetShard: 'sis_shard_1',
-        });
+        };
+        setUser(p);
+        localStorage.setItem('sis_user_profile', JSON.stringify(p));
       } else if (role === 'ADMIN') {
-        setUser({
+        const p = {
           studentId: '371292358236573696',
           name: 'Dr. K. Swaminathan (Registrar)',
           email: 'admin@college.edu',
@@ -166,7 +170,9 @@ export function AuthProvider({ children }) {
           department: 'ADMIN',
           role: 'ADMIN',
           targetShard: 'sis_shard_0',
-        });
+        };
+        setUser(p);
+        localStorage.setItem('sis_user_profile', JSON.stringify(p));
       } else if (role === 'PARENT') {
         localStorage.removeItem('sis_session_token');
         setToken(null);

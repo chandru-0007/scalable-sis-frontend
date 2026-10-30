@@ -245,6 +245,9 @@ export const api = {
     subscribe: (onEvent, onError) => {
       try {
         const eventSource = new EventSource('/api/realtime/stream');
+        eventSource.onopen = () => {
+          if (onEvent) onEvent({ eventType: 'CONNECTED', status: 'ACTIVE' });
+        };
         eventSource.onmessage = (e) => {
           try { onEvent(JSON.parse(e.data)); } catch (err) { onEvent({ data: e.data }); }
         };
